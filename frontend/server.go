@@ -21,7 +21,7 @@ type Handler struct {
 // NewHandler returns an initialized Handler object.
 func NewHandler() *Handler {
 	return &Handler{
-		index: template.Must(template.ParseFiles("content/index.html")),
+		index: template.Must(template.ParseFiles("frontend/content/index.html")),
 	}
 }
 

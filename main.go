@@ -18,7 +18,7 @@ import (
 	//"google.golang.org/grpc"
 	//pb "github.com/your-username/your-repo-root/helloworld" // Adjust path
 	//"github.com/your-username/your-repo-root/db"          // Adjust path
-	"github.com/kingofmen/cyoa-exploratory/frontend/server"
+	"github.com/kingofmen/cyoa-exploratory/frontend"
 )
 
 var dbPool *sql.DB // Global variable to hold the connection pool
@@ -95,7 +95,7 @@ func main() {
 	httpMux := http.NewServeMux()
 	// Frontend server.
 	//fsRoot := http.FileServer(http.Dir("./static"))
-	feRoot := frontend.NewHandler()
+	feRoot := server.NewHandler()
 	httpMux.Handle("/", feRoot) // Serve static files at the root
 
 	// Add other HTTP handlers here if needed
