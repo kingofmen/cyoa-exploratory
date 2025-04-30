@@ -18,6 +18,7 @@ import (
 	//"google.golang.org/grpc"
 	//pb "github.com/your-username/your-repo-root/helloworld" // Adjust path
 	//"github.com/your-username/your-repo-root/db"          // Adjust path
+	"github.com/kingofmen/cyoa-exploratory/frontend/server"
 )
 
 var dbPool *sql.DB // Global variable to hold the connection pool
@@ -92,13 +93,10 @@ func main() {
 	*/
 	// --- HTTP Server Setup ---
 	httpMux := http.NewServeMux()
-	// Serve static files from the "/static/" path (if needed separately)
-	// fsStatic := http.FileServer(http.Dir("./static"))
-	// httpMux.Handle("/static/", http.StripPrefix("/static/", fsStatic))
-
-	// Serve index.html and other files from root
-	fsRoot := http.FileServer(http.Dir("./static"))
-	httpMux.Handle("/", fsRoot) // Serve static files at the root
+	// Frontend server.
+	//fsRoot := http.FileServer(http.Dir("./static"))
+	feRoot := frontend.NewHandler()
+	httpMux.Handle("/", feRoot) // Serve static files at the root
 
 	// Add other HTTP handlers here if needed
 	// httpMux.HandleFunc("/api/resource", handleAPIResource)
