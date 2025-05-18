@@ -17,7 +17,7 @@ import (
 	"github.com/soheilhy/cmux"
 	//"google.golang.org/grpc"
 	//pb "github.com/your-username/your-repo-root/helloworld" // Adjust path
-	//"github.com/your-username/your-repo-root/db"          // Adjust path
+	"github.com/kingofmen/cyoa-exploratory/db"
 	"github.com/kingofmen/cyoa-exploratory/frontend"
 )
 
@@ -35,19 +35,31 @@ func main() {
 	}
 	addr := ":" + strconv.Itoa(port)
 
+	// TODO: Read from, like, actual config.
+	dbCfg := &initialize.Config{
+		Direct: &initialize.Local{
+			User:     os.Getenv("CYOA_DB_USER"),
+			Password: os.Getenv("CYOA_DB_PASSWD"),
+			Host:     "localhost",
+			Port:     3306,
+			Name:     os.Getenv("CYOA_DB_NAME"),
+		},
+	}
+	dbPool, cleanup, err := initialize.ConnectionPool(dbCfg)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	if cleanup != nil {
+		defer cleanup() // Ensure Cloud SQL connector resources are cleaned up
+	}
+	defer dbPool.Close() // Close the connection pool on shutdown
+
 	// --- Database Connection (Placeholder) ---
 	// Establish DB connection pool early
 	/*
 		var cleanup func() error
 		dbPool, cleanup, err = db.ConnectDB() // Call the function from db/connection.go
-		if err!= nil {
-			log.Fatalf("Failed to connect to database: %v", err)
-		}
-		if cleanup!= nil {
-			defer cleanup() // Ensure Cloud SQL connector resources are cleaned up
-		}
 		if dbPool!= nil {
-			defer dbPool.Close() // Close the connection pool on shutdown
 			log.Println("Database connection pool established.")
 			// Optional: Ping DB to verify connection early
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
