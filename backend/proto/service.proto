@@ -1,0 +1,29 @@
+edition="2023";
+
+// Package cyoa defines the backend API for cyoa-exploratory.
+package cyoa;
+option go_package = "github.com/kingofmen/cyoa-exploratory/backend/proto";
+
+service Cyoa {
+  rpc CreateLocation(CreateLocationRequest) returns (CreateLocationResponse) {}
+  rpc ListLocations(ListLocationsRequest) returns (ListLocationsResponse) {}
+};
+
+
+
+message Location {
+  string title = 1;
+  string content = 2;
+}
+
+message CreateLocationRequest {
+  Location location = 1;
+}
+
+message CreateLocationResponse{}
+
+message ListLocationsRequest{}
+message ListLocationsResponse{
+  repeated Location locations = 1;
+}
+

@@ -5,8 +5,17 @@
     <meta charset="utf-8">
 </head>
 <body>
-    <h1>This is my Hello Templates page.</h1>
-    <p>This page is served as a template file. It is here to test that
-    I can get dynamic HTML up and running. The current time is {{.Timestamp}}.</p>
+    <h1>This is my Hello CRUD page.</h1>
+    <p>This page is my proof-of-principle bare-bones warmup exercise
+    for dynamic HTML backed by a CRUDdy database. The current time is
+      {{.Timestamp}}.</p>
+
+    <h1>Locations</h1>
+      {{ range $loc := .Locations }}
+      <details>
+        <summary> {{ $loc.Title }} </summary>
+	{{ $loc.Content }}
+      </details>
+      {{ end }}
 </body>
 </html>

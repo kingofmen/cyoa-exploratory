@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -14,14 +15,41 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/soheilhy/cmux"
-	//"google.golang.org/grpc"
-	//pb "github.com/your-username/your-repo-root/helloworld" // Adjust path
+	"github.com/kingofmen/cyoa-exploratory/backend"
 	"github.com/kingofmen/cyoa-exploratory/db"
 	"github.com/kingofmen/cyoa-exploratory/frontend"
+	"github.com/soheilhy/cmux"
+	"google.golang.org/grpc"
+
+	spb "github.com/kingofmen/cyoa-exploratory/backend/proto"
 )
 
 var dbPool *sql.DB // Global variable to hold the connection pool
+
+// FakeClient implements CyoaClient by just calling the handlers
+// library directly.
+type FakeClient struct {
+	root *handlers.Server
+}
+
+func (fc *FakeClient) CreateLocation(ctx context.Context, in *spb.CreateLocationRequest, opts ...grpc.CallOption) (*spb.CreateLocationResponse, error) {
+	if fc == nil {
+		return nil, fmt.Errorf("nil client")
+	}
+	if fc.root == nil {
+		return nil, fmt.Errorf("nil server")
+	}
+	return fc.root.CreateLocation(ctx, in)
+}
+func (fc *FakeClient) ListLocations(ctx context.Context, in *spb.ListLocationsRequest, opts ...grpc.CallOption) (*spb.ListLocationsResponse, error) {
+	if fc == nil {
+		return nil, fmt.Errorf("nil client")
+	}
+	if fc.root == nil {
+		return nil, fmt.Errorf("nil server")
+	}
+	return fc.root.ListLocations(ctx, in)
+}
 
 func main() {
 	// --- Port Configuration ---
@@ -92,42 +120,23 @@ func main() {
 	httpL := m.Match(cmux.HTTP1Fast())
 	log.Println("Matcher created for HTTP/1.1")
 
-	// Match any other HTTP/2 requests (optional, could be for grpc-web without content-type?)
-	// http2L := m.Match(cmux.HTTP2())
-	// log.Println("Matcher created for other HTTP/2")
-
 	// --- gRPC Server Setup ---
-	// Remove for initial hello-world implementation.
-	/*
-		grpcS := grpc.NewServer()
-		pb.RegisterGreeterServer(grpcS, NewGreeterServer()) // Register our greeter implementation
-		log.Println("gRPC server configured")
-	*/
+	beRoot := handlers.New(dbPool)
+	// TODO: Set up as actual gRPC server with muxer instead of this fakery.
+	fcli := &FakeClient{
+		root: beRoot,
+	}
+
 	// --- HTTP Server Setup ---
 	httpMux := http.NewServeMux()
 	// Frontend server.
-	//fsRoot := http.FileServer(http.Dir("./static"))
-	feRoot := server.NewHandler()
+	feRoot := server.NewHandler(fcli)
 	httpMux.Handle("/", feRoot) // Serve static files at the root
-
-	// Add other HTTP handlers here if needed
-	// httpMux.HandleFunc("/api/resource", handleAPIResource)
 
 	httpS := &http.Server{
 		Handler: httpMux,
 	}
 	log.Println("HTTP server configured")
-
-	// --- Start Servers in Goroutines ---
-	/*
-		go func() {
-			log.Println("Starting gRPC server...")
-			if err := grpcS.Serve(grpcL); err!= nil && err!= cmux.ErrListenerClosed {
-				log.Fatalf("gRPC server error: %v", err)
-			}
-			log.Println("gRPC server stopped.")
-		}()
-	*/
 
 	go func() {
 		log.Println("Starting HTTP server...")
@@ -136,14 +145,6 @@ func main() {
 		}
 		log.Println("HTTP server stopped.")
 	}()
-
-	// go func() { // If matching other HTTP/2
-	// 	log.Println("Starting HTTP/2 server...")
-	// 	if err := httpS.Serve(http2L); err!= nil && err!= http.ErrServerClosed && err!= cmux.ErrListenerClosed {
-	// 		log.Fatalf("HTTP/2 server error: %v", err)
-	// 	}
-	// 	log.Println("HTTP/2 server stopped.")
-	// }()
 
 	// --- Start Multiplexer ---
 	log.Println("Starting cmux server...")
