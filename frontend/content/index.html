@@ -17,5 +17,22 @@
 	{{ $loc.Content }}
       </details>
       {{ end }}
+      <h1>Create New Location</h1>
+      <form action="{{ .CreateLoc }}" method="POST">
+        <input
+          id="{{ .CreateLocTitle }}"
+          name="{{ .CreateLocTitle }}"
+          required
+          minlength="10"
+          maxlength="100"
+        /></br>
+        <textarea
+          id="{{ .CreateLocContent }}"
+          name="{{ .CreateLocContent }}"
+          required
+          minlength="50"
+        >Lorem Ipsum</textarea></br>
+        <button>Submit</button>
+      </form>
 </body>
 </html>
