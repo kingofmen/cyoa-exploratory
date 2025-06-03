@@ -34,6 +34,35 @@ func (s *Server) CreateLocation(ctx context.Context, req *spb.CreateLocationRequ
 	return resp, nil
 }
 
+func (s *Server) UpdateLocation(ctx context.Context, req *spb.UpdateLocationRequest) (*spb.UpdateLocationResponse, error) {
+	loc := req.GetLocation()
+	if loc == nil {
+		return nil, fmt.Errorf("UpdateLocation called with nil location")
+	}
+	if len(loc.GetTitle()) < 1 {
+		return nil, fmt.Errorf("cannot update location to have empty title")
+	}
+	if req.GetLocationId() < 1 {
+		return nil, fmt.Errorf("location ID not specified")
+	}
+	resp, err := updateLocationImpl(ctx, s.db, req.GetLocationId(), loc)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateLocation error: %w", err)
+	}
+	return resp, nil
+}
+
+func (s *Server) DeleteLocation(ctx context.Context, req *spb.DeleteLocationRequest) (*spb.DeleteLocationResponse, error) {
+	if req.GetLocationId() < 1 {
+		return nil, fmt.Errorf("location ID not specified")
+	}
+	resp, err := deleteLocationImpl(ctx, s.db, req.GetLocationId())
+	if err != nil {
+		return nil, fmt.Errorf("DeleteLocation error: %w", err)
+	}
+	return resp, nil
+}
+
 func str(s string) *string {
 	copy := s
 	return &copy

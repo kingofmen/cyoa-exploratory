@@ -41,6 +41,27 @@ func (fc *FakeClient) CreateLocation(ctx context.Context, in *spb.CreateLocation
 	}
 	return fc.root.CreateLocation(ctx, in)
 }
+
+func (fc *FakeClient) UpdateLocation(ctx context.Context, in *spb.UpdateLocationRequest, opts ...grpc.CallOption) (*spb.UpdateLocationResponse, error) {
+	if fc == nil {
+		return nil, fmt.Errorf("nil client")
+	}
+	if fc.root == nil {
+		return nil, fmt.Errorf("nil server")
+	}
+	return fc.root.UpdateLocation(ctx, in)
+}
+
+func (fc *FakeClient) DeleteLocation(ctx context.Context, in *spb.DeleteLocationRequest, opts ...grpc.CallOption) (*spb.DeleteLocationResponse, error) {
+	if fc == nil {
+		return nil, fmt.Errorf("nil client")
+	}
+	if fc.root == nil {
+		return nil, fmt.Errorf("nil server")
+	}
+	return fc.root.DeleteLocation(ctx, in)
+}
+
 func (fc *FakeClient) ListLocations(ctx context.Context, in *spb.ListLocationsRequest, opts ...grpc.CallOption) (*spb.ListLocationsResponse, error) {
 	if fc == nil {
 		return nil, fmt.Errorf("nil client")

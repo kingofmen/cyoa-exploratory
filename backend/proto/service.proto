@@ -6,6 +6,8 @@ option go_package = "github.com/kingofmen/cyoa-exploratory/backend/proto";
 
 service Cyoa {
   rpc CreateLocation(CreateLocationRequest) returns (CreateLocationResponse) {}
+  rpc UpdateLocation(UpdateLocationRequest) returns (UpdateLocationResponse) {}
+  rpc DeleteLocation(DeleteLocationRequest) returns (DeleteLocationResponse) {}
   rpc ListLocations(ListLocationsRequest) returns (ListLocationsResponse) {}
 };
 
@@ -21,6 +23,19 @@ message CreateLocationRequest {
 }
 
 message CreateLocationResponse{}
+
+message UpdateLocationRequest {
+  int64 location_id = 1;
+  Location location = 2;
+}
+
+message UpdateLocationResponse{}
+
+message DeleteLocationRequest {
+  int64 location_id = 1;
+}
+
+message DeleteLocationResponse{}
 
 message ListLocationsRequest{}
 message ListLocationsResponse{
