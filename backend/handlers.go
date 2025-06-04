@@ -81,7 +81,7 @@ func listLocationsImpl(ctx context.Context, db *sql.DB, req *spb.ListLocationsRe
 	if err != nil {
 		return nil, fmt.Errorf("could not begin transaction: %w", err)
 	}
-	rows, err := txn.QueryContext(ctx, `SELECT l.title, l.content FROM Locations AS l ORDER BY l.id ASC`)
+	rows, err := txn.QueryContext(ctx, `SELECT l.id, l.title, l.content FROM Locations AS l ORDER BY l.id ASC`)
 	if err != nil {
 		if rerr := txn.Rollback(); rerr != nil {
 			return nil, fmt.Errorf("database error listing locations: %w; rollback failed: %w", err, rerr)
@@ -89,14 +89,15 @@ func listLocationsImpl(ctx context.Context, db *sql.DB, req *spb.ListLocationsRe
 		return nil, fmt.Errorf("database error listing locations: %w", err)
 	}
 	for rows.Next() {
+		var id int64
 		var title, content string
-		if err := rows.Scan(&title, &content); err != nil {
+		if err := rows.Scan(&id, &title, &content); err != nil {
 			if rerr := txn.Rollback(); rerr != nil {
 				return nil, fmt.Errorf("error scanning location: %w; rollback failed: %w", err, rerr)
 			}
 			return nil, fmt.Errorf("error scanning location: %w", err)
 		}
-		resp.Locations = append(resp.Locations, &spb.Location{Title: &title, Content: &content})
+		resp.Locations = append(resp.Locations, &spb.Location{Id: id, Title: &title, Content: &content})
 	}
 	if err := txn.Commit(); err != nil {
 		return nil, fmt.Errorf("error committing query transaction: %w", err)
