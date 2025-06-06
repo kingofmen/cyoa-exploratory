@@ -1,0 +1,29 @@
+\documentclass[12pt]{article}
+\title{AI-powered CYOA dev diary}
+\begin{document}
+
+
+
+\begin{itemize}
+\item[May 13th 2025] Working on the database setup. Realized that
+  currently I'm learning how to do the absolute most basic-bitch CRUD
+  setup possible, just figuring out how to run Cloud SQL and get a
+  local dev environment going for testing, so I should not worry at
+  all about database design. For example, can you reuse Locations in
+  Stories, or does each Location have a unique Story it's contained
+  within? Doesn't matter at all for my purposes today, which are just
+  that I can create and read back some dang text from the
+  database. So, first milestone: Enable creating new locations,
+  listing them, and displaying them on the web UI. They won't have any
+  sort of relationships with other objects because today I'm not doing
+  DB design, I'm doing DB Hello World.
+\item[May 17th] Much struggle setting up protoc and whatnot, since I'm
+  not using Bazel any more as I'm used to. Very annoying. Now need to
+  figure out how to integrate that in the server.
+\item[June 5th] Have completed very basic CRUD setup for
+  Locations. Used Jules to produce the boilerplate for the Update and
+  Delete operations, not sure it saved me much time but oh well, it
+  was an experiment. Next step is to make all this compile on Cloud,
+  since I now have two steps, the proto and then the server.
+\end{itemize}
+
