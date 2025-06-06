@@ -153,6 +153,7 @@ func main() {
 	// Frontend server.
 	feRoot := server.NewHandler(fcli)
 	httpMux.HandleFunc(server.CreateLocationURL, feRoot.CreateLocation)
+	httpMux.HandleFunc(server.UpdateLocationURL, feRoot.UpdateLocationHandler)
 	httpMux.Handle("/", feRoot) // Serve static files at the root
 
 	httpS := &http.Server{

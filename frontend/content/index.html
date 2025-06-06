@@ -32,7 +32,44 @@
           required
           minlength="50"
         >Lorem Ipsum</textarea></br>
-        <button>Submit</button>
+        <button>Create Location</button>
       </form>
+
+    <h1>Update Location</h1>
+    <form action="{{ .UpdateLoc }}" method="POST">
+        <label for="{{ .UpdateLocId }}">Select Location:</label><br/>
+        <select id="{{ .UpdateLocId }}" name="{{ .UpdateLocId }}" required>
+            <option value="" disabled selected>-- Select a Location --</option>
+            {{ range $loc := .Locations }}
+            <option value="{{ $loc.Id }}">{{ $loc.Title }}</option>
+            {{ end }}
+        </select><br/><br/>
+
+        <label for="{{ .UpdateLocTitle }}">New Title:</label><br/>
+        <input
+          id="{{ .UpdateLocTitle }}"
+          name="{{ .UpdateLocTitle }}"
+          required
+          minlength="10"
+          maxlength="100"
+	  value="New Title Here"
+        /></br>
+        <label for="{{ .UpdateLocContent }}">New Content:</label><br/>
+        <textarea
+	  id="{{ .UpdateLocContent }}"
+          name="{{ .UpdateLocContent }}"
+	  minlength="5"
+	  rows="10"
+	  cols="80">New Content Here
+	</textarea><br/><br/>
+
+        <input type="checkbox"
+	       id="{{ .DeleteLoc }}"
+	       name="{{ .DeleteLoc }}"
+	       value="{{ .DeleteLoc }}">
+        <label for="{{ .DeleteLoc }}">Delete this location</label><br/><br/>
+
+        <button type="submit">Update/Delete Location</button>
+    </form>
 </body>
 </html>

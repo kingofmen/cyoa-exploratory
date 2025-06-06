@@ -14,8 +14,9 @@ service Cyoa {
 
 
 message Location {
-  string title = 1;
-  string content = 2;
+  int64 id = 1;
+  string title = 2;
+  string content = 3;
 }
 
 message CreateLocationRequest {

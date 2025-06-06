@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 
 	spb "github.com/kingofmen/cyoa-exploratory/backend/proto"
 )
@@ -28,19 +29,16 @@ func createLocationImpl(ctx context.Context, db *sql.DB, loc *spb.Location) (*sp
 }
 
 func updateLocationImpl(ctx context.Context, db *sql.DB, id int64, loc *spb.Location) (*spb.UpdateLocationResponse, error) {
+	log.Printf("Updating location %d: %q %q", id, loc.GetTitle(), loc.GetContent())
 	txn, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not begin transaction: %w", err)
 	}
-	result, err := txn.ExecContext(ctx, `UPDATE Locations SET title = ?, content = ? WHERE id = ?`, loc.GetTitle(), loc.GetContent(), id)
-	if err != nil {
+	if _, err := txn.ExecContext(ctx, `UPDATE Locations SET title = ?, content = ? WHERE id = ?`, loc.GetTitle(), loc.GetContent(), id); err != nil {
 		if rerr := txn.Rollback(); rerr != nil {
 			return nil, fmt.Errorf("could not write to transaction: %w; rollback failed: %w", err, rerr)
 		}
 		return nil, fmt.Errorf("could not write to transaction: %w", err)
-	}
-	if nr, err := result.RowsAffected(); nr != 1 || err != nil {
-		return nil, fmt.Errorf("error updating Location with ID %d: %d rows written, expect exactly 1; %w", id, nr, err)
 	}
 
 	if err := txn.Commit(); err != nil {
@@ -55,15 +53,11 @@ func deleteLocationImpl(ctx context.Context, db *sql.DB, id int64) (*spb.DeleteL
 	if err != nil {
 		return nil, fmt.Errorf("could not begin transaction: %w", err)
 	}
-	result, err := txn.ExecContext(ctx, `DELETE FROM Locations WHERE id = ?`, id)
-	if err != nil {
+	if _, err := txn.ExecContext(ctx, `DELETE FROM Locations WHERE id = ?`, id); err != nil {
 		if rerr := txn.Rollback(); rerr != nil {
 			return nil, fmt.Errorf("could not write to transaction: %w; rollback failed: %w", err, rerr)
 		}
 		return nil, fmt.Errorf("could not write to transaction: %w", err)
-	}
-	if nr, err := result.RowsAffected(); nr != 1 || err != nil {
-		return nil, fmt.Errorf("error deleting Location with ID %d: %d rows written, expect exactly 1; %w", id, nr, err)
 	}
 
 	if err := txn.Commit(); err != nil {
@@ -71,6 +65,11 @@ func deleteLocationImpl(ctx context.Context, db *sql.DB, id int64) (*spb.DeleteL
 	}
 
 	return &spb.DeleteLocationResponse{}, nil
+}
+
+func ptr(x int64) *int64 {
+	val := x
+	return &val
 }
 
 func listLocationsImpl(ctx context.Context, db *sql.DB, req *spb.ListLocationsRequest) (*spb.ListLocationsResponse, error) {
@@ -81,7 +80,7 @@ func listLocationsImpl(ctx context.Context, db *sql.DB, req *spb.ListLocationsRe
 	if err != nil {
 		return nil, fmt.Errorf("could not begin transaction: %w", err)
 	}
-	rows, err := txn.QueryContext(ctx, `SELECT l.title, l.content FROM Locations AS l ORDER BY l.id ASC`)
+	rows, err := txn.QueryContext(ctx, `SELECT l.id, l.title, l.content FROM Locations AS l ORDER BY l.id ASC`)
 	if err != nil {
 		if rerr := txn.Rollback(); rerr != nil {
 			return nil, fmt.Errorf("database error listing locations: %w; rollback failed: %w", err, rerr)
@@ -89,14 +88,15 @@ func listLocationsImpl(ctx context.Context, db *sql.DB, req *spb.ListLocationsRe
 		return nil, fmt.Errorf("database error listing locations: %w", err)
 	}
 	for rows.Next() {
+		var id int64
 		var title, content string
-		if err := rows.Scan(&title, &content); err != nil {
+		if err := rows.Scan(&id, &title, &content); err != nil {
 			if rerr := txn.Rollback(); rerr != nil {
 				return nil, fmt.Errorf("error scanning location: %w; rollback failed: %w", err, rerr)
 			}
 			return nil, fmt.Errorf("error scanning location: %w", err)
 		}
-		resp.Locations = append(resp.Locations, &spb.Location{Title: &title, Content: &content})
+		resp.Locations = append(resp.Locations, &spb.Location{Id: ptr(id), Title: &title, Content: &content})
 	}
 	if err := txn.Commit(); err != nil {
 		return nil, fmt.Errorf("error committing query transaction: %w", err)
