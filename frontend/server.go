@@ -2,26 +2,27 @@
 package server
 
 import (
-	//"context"
+	"context"
 	"fmt"
 	"html/template"
-	"log" // Added
+	"log"
 	"net/http"
-	"strconv" // Added
+	"strconv"
 	"time"
 
 	spb "github.com/kingofmen/cyoa-exploratory/backend/proto"
 )
 
 const (
-	CreateLocationURL   = "/locations/create"
-	createLocTitleKey   = "create_location_title"
-	createLocContentKey = "create_location_content"
+	CreateLocationURL = "/locations/create"
+	UpdateLocationURL = "/location/update"
 
-	UpdateLocationURL   = "/location/update"
-	updateLocIdKey      = "location_id"
-	updateLocContentKey = "content"
-	deleteLocKey        = "delete"
+	createCtx  = "create"
+	updateCtx  = "update"
+	titleKey   = "title_key"
+	contentKey = "content_key"
+	locIdKey   = "location_id_key"
+	deleteKey  = "delete_key"
 )
 
 // indexData holds data for the front page.
@@ -31,6 +32,12 @@ type indexData struct {
 	CreateLoc        string
 	CreateLocTitle   string
 	CreateLocContent string
+
+	UpdateLoc        string
+	UpdateLocId      string
+	UpdateLocTitle   string
+	UpdateLocContent string
+	DeleteLoc        string
 }
 
 // locationData holds data to display a Location.
@@ -54,6 +61,24 @@ func NewHandler(cl spb.CyoaClient) *Handler {
 	}
 }
 
+func makeKey(ctx, key string) string {
+	return fmt.Sprintf("%s_%s", ctx, key)
+}
+
+func makeIndexData() indexData {
+	return indexData{
+		Timestamp:        fmt.Sprintf("%s", time.Now()),
+		CreateLoc:        CreateLocationURL,
+		CreateLocTitle:   makeKey(createCtx, titleKey),
+		CreateLocContent: makeKey(createCtx, contentKey),
+		UpdateLoc:        UpdateLocationURL,
+		UpdateLocId:      makeKey(updateCtx, locIdKey),
+		UpdateLocTitle:   makeKey(updateCtx, titleKey),
+		UpdateLocContent: makeKey(updateCtx, contentKey),
+		DeleteLoc:        makeKey(updateCtx, deleteKey),
+	}
+}
+
 // ServeHTTP writes a response to the request into the writer.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	locResp, err := h.client.ListLocations(req.Context(), &spb.ListLocationsRequest{})
@@ -61,35 +86,78 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, fmt.Errorf("could not load locations: %w", err).Error(), http.StatusInternalServerError)
 		return
 	}
-	data := indexData{
-		Timestamp:        fmt.Sprintf("%s", time.Now()),
-		Locations:        locResp.GetLocations(),
-		CreateLoc:        CreateLocationURL,
-		CreateLocTitle:   createLocTitleKey,
-		CreateLocContent: createLocContentKey,
-	}
+	data := makeIndexData()
+	data.Locations = locResp.GetLocations()
 	h.index.Execute(w, data)
 }
 
 // CreateLocation passes the request to the gRPC backend and returns
 // the created location.
 func (h *Handler) CreateLocation(w http.ResponseWriter, req *http.Request) {
-	title := req.FormValue(createLocTitleKey)
-	content := req.FormValue(createLocContentKey)
-	locData := &locationData{
-		Proto: &spb.Location{
-			Title:   &title,
-			Content: &content,
-		},
+	data := makeIndexData()
+	title := req.FormValue(data.CreateLocTitle)
+	content := req.FormValue(data.CreateLocContent)
+	locData := &spb.Location{
+		Title:   &title,
+		Content: &content,
 	}
 	_, err := h.client.CreateLocation(req.Context(), &spb.CreateLocationRequest{
-		Location: locData.Proto,
+		Location: locData,
 	})
 	if err != nil {
 		http.Error(w, fmt.Errorf("error creating location: %w", err).Error(), http.StatusInternalServerError)
 		return
 	}
-	h.location.Execute(w, &locData)
+	log.Printf("Location with title %q updated by frontend handler.", title)
+	http.Redirect(w, req, "/", http.StatusSeeOther)
+}
+
+func ptr(x int64) *int64 {
+	val := x
+	return &val
+}
+
+// deleteLocation deletes the location with the given ID.
+func (h *Handler) deleteLocation(ctx context.Context, locID int64) error {
+	_, err := h.client.DeleteLocation(ctx, &spb.DeleteLocationRequest{LocationId: ptr(locID)})
+	return err
+}
+
+func str(s string) *string {
+	copy := s
+	return &copy
+}
+
+// updateLocation updates the provided location.
+func (h *Handler) updateLocation(ctx context.Context, locID int64, title, content string) error {
+	listResp, err := h.client.ListLocations(ctx, &spb.ListLocationsRequest{})
+	if err != nil {
+		return fmt.Errorf("error fetching locations to prepare update for ID %d: %v", locID, err)
+	}
+
+	found := false
+	for _, loc := range listResp.GetLocations() {
+		if loc.GetId() == locID {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("Location with ID %d not found, cannot update.", locID)
+	}
+
+	if _, err = h.client.UpdateLocation(ctx, &spb.UpdateLocationRequest{
+		LocationId: ptr(locID),
+		Location: &spb.Location{
+			Id:      ptr(locID),
+			Title:   str(title),
+			Content: str(content),
+		},
+	}); err != nil {
+		return fmt.Errorf("Error updating location with ID %d: %v", locID, err)
+	}
+	return nil
 }
 
 // UpdateLocationHandler handles updates or deletions of locations.
@@ -99,9 +167,11 @@ func (h *Handler) UpdateLocationHandler(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	locIDStr := req.FormValue(updateLocIdKey)
-	newContentFromForm := req.FormValue(updateLocContentKey)
-	deleteFlag := req.FormValue(deleteLocKey) == "true"
+	data := makeIndexData()
+	locIDStr := req.FormValue(data.UpdateLocId)
+	newTitle := req.FormValue(data.UpdateLocTitle)
+	newContent := req.FormValue(data.UpdateLocContent)
+	deleteFlag := req.FormValue(data.DeleteLoc) == data.DeleteLoc
 
 	if locIDStr == "" {
 		http.Error(w, "Location ID is required for update/delete.", http.StatusBadRequest)
@@ -115,60 +185,18 @@ func (h *Handler) UpdateLocationHandler(w http.ResponseWriter, req *http.Request
 	}
 
 	ctx := req.Context()
-
 	if deleteFlag {
-		_, err := h.client.DeleteLocation(ctx, &spb.DeleteLocationRequest{LocationId: locID})
-		if err != nil {
+		if err := h.deleteLocation(ctx, locID); err != nil {
 			http.Error(w, fmt.Sprintf("Error deleting location with ID %d: %v", locID, err), http.StatusInternalServerError)
 			return
 		}
-		log.Printf("Location with ID %d marked for deletion by frontend handler.", locID)
+		log.Printf("Location with ID %d deleted by frontend handler.", locID)
 	} else {
-		// Update operation
-		listResp, err := h.client.ListLocations(ctx, &spb.ListLocationsRequest{})
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Error fetching locations to prepare update for ID %d: %v", locID, err), http.StatusInternalServerError)
-			return
-		}
-
-		var originalTitlePtr *string
-		found := false
-		for _, loc := range listResp.GetLocations() {
-			if loc.GetId() == locID {
-				originalTitlePtr = loc.Title
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			http.Error(w, fmt.Sprintf("Location with ID %d not found, cannot update.", locID), http.StatusNotFound)
-			return
-		}
-
-		titleForUpdate := originalTitlePtr
-		if originalTitlePtr == nil {
-			// The backend's UpdateLocationImpl requires a non-nil title.
-			emptyStr := ""
-			titleForUpdate = &emptyStr
-		}
-
-		locationToUpdate := &spb.Location{
-			Id:      locID,
-			Title:   titleForUpdate,
-			Content: &newContentFromForm,
-		}
-
-		_, err = h.client.UpdateLocation(ctx, &spb.UpdateLocationRequest{
-			LocationId: locID,
-			Location:   locationToUpdate,
-		})
-		if err != nil {
+		if err := h.updateLocation(ctx, locID, newTitle, newContent); err != nil {
 			http.Error(w, fmt.Sprintf("Error updating location with ID %d: %v", locID, err), http.StatusInternalServerError)
 			return
 		}
 		log.Printf("Location with ID %d updated by frontend handler.", locID)
 	}
-
 	http.Redirect(w, req, "/", http.StatusSeeOther)
 }
