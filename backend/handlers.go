@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"log"
 
+	"google.golang.org/protobuf/proto"
+
 	spb "github.com/kingofmen/cyoa-exploratory/backend/proto"
 )
 
@@ -67,11 +69,6 @@ func deleteLocationImpl(ctx context.Context, db *sql.DB, id int64) (*spb.DeleteL
 	return &spb.DeleteLocationResponse{}, nil
 }
 
-func ptr(x int64) *int64 {
-	val := x
-	return &val
-}
-
 func listLocationsImpl(ctx context.Context, db *sql.DB, req *spb.ListLocationsRequest) (*spb.ListLocationsResponse, error) {
 	resp := &spb.ListLocationsResponse{
 		Locations: make([]*spb.Location, 0, 10),
@@ -96,7 +93,7 @@ func listLocationsImpl(ctx context.Context, db *sql.DB, req *spb.ListLocationsRe
 			}
 			return nil, fmt.Errorf("error scanning location: %w", err)
 		}
-		resp.Locations = append(resp.Locations, &spb.Location{Id: ptr(id), Title: &title, Content: &content})
+		resp.Locations = append(resp.Locations, &spb.Location{Id: proto.Int64(id), Title: &title, Content: &content})
 	}
 	if err := txn.Commit(); err != nil {
 		return nil, fmt.Errorf("error committing query transaction: %w", err)

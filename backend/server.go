@@ -63,11 +63,6 @@ func (s *Server) DeleteLocation(ctx context.Context, req *spb.DeleteLocationRequ
 	return resp, nil
 }
 
-func str(s string) *string {
-	copy := s
-	return &copy
-}
-
 func (s *Server) ListLocations(ctx context.Context, req *spb.ListLocationsRequest) (*spb.ListLocationsResponse, error) {
 	resp, err := listLocationsImpl(ctx, s.db, req)
 	if err != nil {

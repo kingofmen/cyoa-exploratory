@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+
 	spb "github.com/kingofmen/cyoa-exploratory/backend/proto"
 )
 
@@ -112,20 +114,10 @@ func (h *Handler) CreateLocation(w http.ResponseWriter, req *http.Request) {
 	http.Redirect(w, req, "/", http.StatusSeeOther)
 }
 
-func ptr(x int64) *int64 {
-	val := x
-	return &val
-}
-
 // deleteLocation deletes the location with the given ID.
 func (h *Handler) deleteLocation(ctx context.Context, locID int64) error {
-	_, err := h.client.DeleteLocation(ctx, &spb.DeleteLocationRequest{LocationId: ptr(locID)})
+	_, err := h.client.DeleteLocation(ctx, &spb.DeleteLocationRequest{LocationId: proto.Int64(locID)})
 	return err
-}
-
-func str(s string) *string {
-	copy := s
-	return &copy
 }
 
 // updateLocation updates the provided location.
@@ -148,11 +140,11 @@ func (h *Handler) updateLocation(ctx context.Context, locID int64, title, conten
 	}
 
 	if _, err = h.client.UpdateLocation(ctx, &spb.UpdateLocationRequest{
-		LocationId: ptr(locID),
+		LocationId: proto.Int64(locID),
 		Location: &spb.Location{
-			Id:      ptr(locID),
-			Title:   str(title),
-			Content: str(content),
+			Id:      proto.Int64(locID),
+			Title:   proto.String(title),
+			Content: proto.String(content),
 		},
 	}); err != nil {
 		return fmt.Errorf("Error updating location with ID %d: %v", locID, err)
