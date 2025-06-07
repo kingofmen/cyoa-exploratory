@@ -41,7 +41,7 @@
         <select id="{{ .UpdateLocId }}" name="{{ .UpdateLocId }}" required>
             <option value="" disabled selected>-- Select a Location --</option>
             {{ range $loc := .Locations }}
-            <option value="{{ $loc.Id }}">{{ $loc.Title }}</option>
+            <option value="{{ $loc.Id }}" data-title="{{ $loc.Title }}" data-content="{{ $loc.Content }}">{{ $loc.Title }}</option>
             {{ end }}
         </select><br/><br/>
 
@@ -71,5 +71,20 @@
 
         <button type="submit">Update/Delete Location</button>
     </form>
+
+    <script>
+        const locationSelect = document.getElementById('{{ .UpdateLocId }}');
+        const newTitleInput = document.getElementById('{{ .UpdateLocTitle }}');
+        const newContentTextarea = document.getElementById('{{ .UpdateLocContent }}');
+
+        locationSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const title = selectedOption.getAttribute('data-title');
+            const content = selectedOption.getAttribute('data-content');
+
+            newTitleInput.value = title;
+            newContentTextarea.value = content;
+        });
+    </script>
 </body>
 </html>
