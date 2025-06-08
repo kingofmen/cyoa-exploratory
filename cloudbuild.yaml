@@ -1,4 +1,52 @@
 steps:
+  - name: 'golang:1.22'
+    args:
+      - '-c'
+      - >
+        echo "Starting Protobuf Go code generation..."
+        # Fail early if needed.
+        set -euxo pipefail
+
+        # Install protoc compiler. Force specific version
+        # as apt-get is hopelessly outdated.
+        export PROTOC_VERSION="31.1"
+        export PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+        export PROTOC_ZIP_FILE="protoc-$${PROTOC_VERSION}-linux-x86_64.zip"
+        curl -fsSLo $${PROTOC_ZIP_FILE} $${PB_REL}/download/v$${PROTOC_VERSION}/protoc-$${PROTOC_VERSION}-linux-x86_64.zip
+        apt-get update
+        apt-get install -y unzip file
+        file $${PROTOC_ZIP_FILE}
+        unzip "$${PROTOC_ZIP_FILE}" -d /usr/local/
+        export PATH="$$PATH:/usr/local/bin"
+        protoc --version
+
+        # Ensure GOPATH/bin is in PATH so protoc can find the plugins.
+        # Note double $$ for env.
+        export PATH="$$PATH:$$(go env GOPATH)/bin"
+
+        # Install Go and gRPC plugins for protoc
+        go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+        go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+        # Define input and output directories for protoc.
+        PROTOC_INPUT_DIR="."
+        # Output generated Go code to same directory.
+        PROTOC_OUTPUT_DIR="."
+
+        # Recursively find .proto files and pipe them to protoc using xargs.
+        # --proto_path tells protoc where to look for imports.
+        # --go_out specifies the output directory.
+        # --go-grpc_out does the same for gRPC output.
+        # --go_opt=paths=source_relative places generated files relative
+        #   to their source.
+        find $${PROTOC_INPUT_DIR} -name "*.proto" -print0 | xargs -0 protoc \
+          --proto_path=$${PROTOC_INPUT_DIR} \
+          --go_out=$${PROTOC_OUTPUT_DIR} \
+          --go-grpc_out=$${PROTOC_OUTPUT_DIR} \
+          --go_opt=paths=source_relative \
+          --go-grpc_opt=paths=source_relative
+    id: GenerateGolangProtoCode
+    entrypoint: /bin/bash
   - name: gcr.io/k8s-skaffold/pack
     args:
       - build
@@ -36,13 +84,13 @@ options:
   substitutionOption: ALLOW_LOOSE
   logging: CLOUD_LOGGING_ONLY
 substitutions:
+  _AR_PROJECT_ID: propane-folio-457801-s8
   _PLATFORM: managed
   _SERVICE_NAME: choose-yoa-dev
   _TRIGGER_ID: 050cc0a4-1e83-4c08-a3c5-914fab5a17bf
   _DEPLOY_REGION: us-central1
   _AR_HOSTNAME: us-central1-docker.pkg.dev
   _AR_REPOSITORY: cloud-run-source-deploy
-  _AR_PROJECT_ID: propane-folio-457801-s8
 tags:
   - gcp-cloud-build-deploy-cloud-run
   - gcp-cloud-build-deploy-cloud-run-managed
