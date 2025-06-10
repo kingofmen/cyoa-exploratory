@@ -85,16 +85,11 @@ func main() {
 	addr := ":" + strconv.Itoa(port)
 
 	// TODO: Read from, like, actual config.
-	dbCfg := &initialize.Config{
-		Direct: &initialize.Local{
-			User:     os.Getenv("CYOA_DB_USER"),
-			Password: os.Getenv("CYOA_DB_PASSWD"),
-			Host:     "localhost",
-			Port:     3306,
-			Name:     os.Getenv("CYOA_DB_NAME"),
-		},
-	}
-	dbPool, cleanup, err := initialize.ConnectionPool(dbCfg)
+	dbcfg := initialize.FromEnv("local").
+		WithUser(os.Getenv("CYOA_DB_USER")).
+		WithPassword(os.Getenv("CYOA_DB_PASSWD")).
+		WithName(os.Getenv("CYOA_DB_NAME"))
+	dbPool, cleanup, err := initialize.ConnectionPool(dbcfg)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}

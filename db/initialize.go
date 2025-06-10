@@ -10,34 +10,38 @@ import (
 	_ "github.com/go-sql-driver/mysql" // For local connection.
 )
 
-// Local stores config data for a locally hosted database.
-type Local struct {
-	User     string
-	Password string
-	Host     string
-	Port     int
-	Name     string
+// Config stores database configuration data to be used for setup.
+type Config struct {
+	user     string
+	password string
+	host     string
+	port     int
+	name     string
+	driver   string
 }
 
 // validate returns an error if the configuration is obviously bad.
-func (l *Local) validate() error {
-	if l == nil {
+func (c *Config) validate() error {
+	if c == nil {
 		return fmt.Errorf("uninitialized local configuration")
 	}
 	unspecified := []string{}
-	if len(l.User) < 1 {
+	if len(c.user) < 1 {
 		unspecified = append(unspecified, "user")
 	}
-	if len(l.Password) < 1 {
+	if len(c.password) < 1 {
 		unspecified = append(unspecified, "password")
 	}
-	if len(l.Host) < 1 {
+	if len(c.host) < 1 {
 		unspecified = append(unspecified, "host")
 	}
-	if len(l.Name) < 1 {
+	if len(c.name) < 1 {
 		unspecified = append(unspecified, "name")
 	}
-	if l.Port < 1 {
+	if len(c.driver) < 1 {
+		unspecified = append(unspecified, "driver")
+	}
+	if c.port < 1 {
 		unspecified = append(unspecified, "port")
 	}
 	if len(unspecified) > 0 {
@@ -48,42 +52,68 @@ func (l *Local) validate() error {
 
 // String returns the connection string for the configuration,
 // and an error if the configuration is invalid.
-func (l *Local) String() (string, error) {
-	if err := l.validate(); err != nil {
+func (c *Config) String() (string, error) {
+	if err := c.validate(); err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true", l.User, l.Password, l.Host, l.Port, l.Name), nil
+	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true", c.user, c.password, c.host, c.port, c.name), nil
 }
 
-// Config stores database configuration data to be used for setup.
-type Config struct {
-	Direct *Local
-	// TODO: Add Cloud config.
+// FromEnv returns a Config object initialized to the environment.
+func FromEnv(env string) *Config {
+	cfg := &Config{}
+	if env == "local" {
+		cfg.host = "localhost"
+		cfg.port = 3306
+		cfg.driver = "mysql"
+	}
+	return cfg
+}
+
+func (c *Config) WithUser(user string) *Config {
+	if c == nil {
+		c = &Config{}
+	}
+	c.user = user
+	return c
+}
+func (c *Config) WithPassword(password string) *Config {
+	if c == nil {
+		c = &Config{}
+	}
+	c.password = password
+	return c
+}
+func (c *Config) WithName(name string) *Config {
+	if c == nil {
+		c = &Config{}
+	}
+	c.name = name
+	return c
 }
 
 func ConnectionPool(cfg *Config) (*sql.DB, func() error, error) {
 	cleanup := func() error { return nil } // Default no-op cleanup.
-	driverName := "mysql"
 	connString := ""
 	var err error
 
-	if cfg.Direct != nil {
+	if cfg.host == "localhost" {
 		log.Println("Initializing local database connection")
-		connString, err = cfg.Direct.String()
+		connString, err = cfg.String()
 		if err != nil {
 			return nil, cleanup, err
 		}
 	} else {
-		return nil, cleanup, fmt.Errorf("No database configuration found.")
+		return nil, cleanup, fmt.Errorf("hosts other than localhost are not implemented.")
 	}
 
-	db, err := sql.Open(driverName, connString)
+	db, err := sql.Open(cfg.driver, connString)
 	if err != nil {
 		// Ensure cleanup is called if Open fails after RegisterDriver succeeded
 		if cErr := cleanup(); cErr != nil {
 			log.Printf("Error during cleanup after sql.Open failure: %v", cErr)
 		}
-		return nil, cleanup, fmt.Errorf("sql.Open(%s) failed: %w", driverName, err)
+		return nil, cleanup, fmt.Errorf("sql.Open(%s) failed: %w", cfg.driver, err)
 	}
 
 	// Configure connection pool settings (optional but recommended)
