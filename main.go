@@ -83,12 +83,19 @@ func main() {
 		log.Fatalf("Invalid PORT environment variable: %v", err)
 	}
 	addr := ":" + strconv.Itoa(port)
+	env := os.Getenv("CYOA_DB_ENV")
+	if len(env) < 1 {
+		env = "local"
+	}
 
 	// TODO: Read from, like, actual config.
-	dbcfg := initialize.FromEnv("local").
+	dbcfg := initialize.FromEnv(env).
 		WithUser(os.Getenv("CYOA_DB_USER")).
 		WithPassword(os.Getenv("CYOA_DB_PASSWD")).
 		WithName(os.Getenv("CYOA_DB_NAME"))
+	if instance := os.Getenv("CYOA_DB_INSTANCE"); len(instance) > 0 {
+		dbcfg = dbcfg.WithHost(instance)
+	}
 	dbPool, cleanup, err := initialize.ConnectionPool(dbcfg)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
@@ -98,26 +105,6 @@ func main() {
 	}
 	defer dbPool.Close() // Close the connection pool on shutdown
 
-	// --- Database Connection (Placeholder) ---
-	// Establish DB connection pool early
-	/*
-		var cleanup func() error
-		dbPool, cleanup, err = db.ConnectDB() // Call the function from db/connection.go
-		if dbPool!= nil {
-			log.Println("Database connection pool established.")
-			// Optional: Ping DB to verify connection early
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-			if err := dbPool.PingContext(ctx); err!= nil {
-				log.Printf("Warning: Failed to ping database: %v", err)
-				// Decide if this should be fatal or just a warning
-			} else {
-				log.Println("Database ping successful.")
-			}
-		} else {
-			log.Println("Database connection pool is nil (running without DB).")
-		}
-	*/
 	// --- Main Listener ---
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {

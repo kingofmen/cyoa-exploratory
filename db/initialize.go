@@ -41,7 +41,7 @@ func (c *Config) validate() error {
 	if len(c.driver) < 1 {
 		unspecified = append(unspecified, "driver")
 	}
-	if c.port < 1 {
+	if c.driver == "mysql" && c.port < 1 {
 		unspecified = append(unspecified, "port")
 	}
 	if len(unspecified) > 0 {
@@ -56,7 +56,13 @@ func (c *Config) String() (string, error) {
 	if err := c.validate(); err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true", c.user, c.password, c.host, c.port, c.name), nil
+	if c.driver == "mysql" {
+		return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true", c.user, c.password, c.host, c.port, c.name), nil
+	}
+	if c.driver == "cloudsql-mysql" {
+		return fmt.Sprintf("%s:%s@cloudsql-mysql(%s)/%s?parseTime=true", c.user, c.password, c.host, c.name), nil
+	}
+	return "", fmt.Errorf("unknown DB driver %q", c.driver)
 }
 
 // FromEnv returns a Config object initialized to the environment.
@@ -66,7 +72,10 @@ func FromEnv(env string) *Config {
 		cfg.host = "localhost"
 		cfg.port = 3306
 		cfg.driver = "mysql"
+	} else if env == "cloud" {
+		cfg.driver = "cloudsql-mysql"
 	}
+
 	return cfg
 }
 
@@ -91,32 +100,42 @@ func (c *Config) WithName(name string) *Config {
 	c.name = name
 	return c
 }
+func (c *Config) WithHost(host string) *Config {
+	if c == nil {
+		c = &Config{}
+	}
+	c.host = host
+	return c
+}
+func (c *Config) WithPort(port int) *Config {
+	if c == nil {
+		c = &Config{}
+	}
+	c.port = port
+	return c
+}
 
 func ConnectionPool(cfg *Config) (*sql.DB, func() error, error) {
 	cleanup := func() error { return nil } // Default no-op cleanup.
 	connString := ""
 	var err error
 
-	if cfg.host == "localhost" {
-		log.Println("Initializing local database connection")
-		connString, err = cfg.String()
-		if err != nil {
-			return nil, cleanup, err
-		}
-	} else {
-		return nil, cleanup, fmt.Errorf("hosts other than localhost are not implemented.")
+	log.Println("Initializing database connection.")
+	connString, err = cfg.String()
+	if err != nil {
+		return nil, cleanup, err
 	}
 
 	db, err := sql.Open(cfg.driver, connString)
 	if err != nil {
-		// Ensure cleanup is called if Open fails after RegisterDriver succeeded
+		// Ensure cleanup is called if Open fails.
 		if cErr := cleanup(); cErr != nil {
 			log.Printf("Error during cleanup after sql.Open failure: %v", cErr)
 		}
 		return nil, cleanup, fmt.Errorf("sql.Open(%s) failed: %w", cfg.driver, err)
 	}
 
-	// Configure connection pool settings (optional but recommended)
+	// Configure connection pool settings.
 	db.SetMaxOpenConns(25)
 	db.SetMaxIdleConns(25)
 	db.SetConnMaxLifetime(5 * time.Minute)
@@ -131,5 +150,6 @@ func ConnectionPool(cfg *Config) (*sql.DB, func() error, error) {
 		return nil, cleanup, fmt.Errorf("db.Ping failed: %w", err)
 	}
 
+	log.Println("Database initialization succeeded.")
 	return db, cleanup, nil
 }
