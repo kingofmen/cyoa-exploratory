@@ -67,7 +67,9 @@ func main() {
 	defer d.Close()
 
 	mysql.RegisterDialContext("cloudsql", func(ctx context.Context, addr string) (net.Conn, error) {
-		return d.Dial(ctx, instanceConnectionName)
+		log.Printf("Dialing %q", addr)
+		//return d.Dial(ctx, instanceConnectionName)
+		return d.Dial(ctx, addr)
 	})
 
 	db, err := sql.Open("mysql", config.FormatDSN())
