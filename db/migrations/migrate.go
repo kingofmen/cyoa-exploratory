@@ -51,7 +51,7 @@ func main() {
 		log.Fatalf("migration file location not set")
 	}
 
-	dsn := fmt.Sprintf("%s@tcp(%s)/%s?parseTime=true", dbUser, instanceConnectionName, dbName)
+	dsn := fmt.Sprintf("%s@unix(%s)/%s?parseTime=true", dbUser, instanceConnectionName, dbName)
 	config, err := mysql.ParseDSN(dsn)
 	if err != nil {
 		log.Fatalf("failed to parse DSN: %v", err)
