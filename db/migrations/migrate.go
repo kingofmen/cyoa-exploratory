@@ -32,7 +32,8 @@ func main() {
 
 	// Cloud SQL Go Connector with IAM auth.
 	// Note this will only work in the Cloud Run job.
-	d, err := cloudsqlconn.NewDialer(context.Background(), cloudsqlconn.WithIAMAuthN())
+	ctx := context.Background()
+	d, err := cloudsqlconn.NewDialer(ctx, cloudsqlconn.WithIAMAuthN())
 	if err != nil {
 		log.Fatalf("failed to initialize dialer: %v", err)
 	}
@@ -52,8 +53,8 @@ func main() {
 		log.Fatalf("failed to set goose dialect: %v", err)
 	}
 
-	if err := goose.Up(db, migrationFiles); err != nil {
-		log.Fatalf("goose up failed: %v", err)
+	if err := goose.UpContext(ctx, db, migrationFiles); err != nil {
+		log.Fatalf("goose up (dsn %q, directory %q) failed: %v", dsn, migrationFiles, err)
 	}
 	log.Println("Successful database migration.")
 }
