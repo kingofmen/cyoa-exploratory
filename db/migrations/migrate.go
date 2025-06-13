@@ -19,6 +19,10 @@ func main() {
 	dbUser := os.Getenv("DB_USER")
 	dbName := os.Getenv("DB_NAME")
 	instanceConnectionName := os.Getenv("INSTANCE_CONNECTION_NAME")
+	migrationFiles := os.Getenv("GOOSE_MIGRATION_FILES")
+	if len(migrationFiles) == 0 {
+		log.Fatalf("migration file location not set")
+	}
 
 	dsn := fmt.Sprintf("%s@unix(%s)/%s?parseTime=true", dbUser, instanceConnectionName, dbName)
 	config, err := mysql.ParseDSN(dsn)
@@ -48,7 +52,7 @@ func main() {
 		log.Fatalf("failed to set goose dialect: %v", err)
 	}
 
-	if err := goose.Up(db, "./"); err != nil {
+	if err := goose.Up(db, migrationFiles); err != nil {
 		log.Fatalf("goose up failed: %v", err)
 	}
 	log.Println("Successful database migration.")
