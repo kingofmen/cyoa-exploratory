@@ -45,13 +45,14 @@ func main() {
 	// dbUser should be the service account.
 	dbUser := os.Getenv("DB_USER")
 	dbName := os.Getenv("DB_NAME")
+	dbConn := os.Getenv("DB_CONN_TYPE")
 	instanceConnectionName := os.Getenv("INSTANCE_CONNECTION_NAME")
 	migrationFiles := os.Getenv("GOOSE_MIGRATION_FILES")
 	if len(migrationFiles) == 0 {
 		log.Fatalf("migration file location not set")
 	}
 
-	dsn := fmt.Sprintf("%s@unix(%s)/%s?parseTime=true", dbUser, instanceConnectionName, dbName)
+	dsn := fmt.Sprintf("%s@%s(%s)/%s?parseTime=true", dbUser, dbConn, instanceConnectionName, dbName)
 	config, err := mysql.ParseDSN(dsn)
 	if err != nil {
 		log.Fatalf("failed to parse DSN: %v", err)
