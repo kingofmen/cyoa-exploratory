@@ -51,7 +51,7 @@ func main() {
 		log.Fatalf("migration file location not set")
 	}
 
-	dsn := fmt.Sprintf("%s@unix(%s)/%s?parseTime=true", dbUser, instanceConnectionName, dbName)
+	dsn := fmt.Sprintf("%s@tcp(%s)/%s?parseTime=true", dbUser, instanceConnectionName, dbName)
 	config, err := mysql.ParseDSN(dsn)
 	if err != nil {
 		log.Fatalf("failed to parse DSN: %v", err)
@@ -84,7 +84,7 @@ func main() {
 		log.Printf("error getting debug info: %v", err)
 	}
 
-	if err := goose.UpContext(ctx, db, migrationFiles); err != nil {
+	if err := goose.UpContext(ctx, db, filepath.FromSlash(migrationFiles)); err != nil {
 		log.Fatalf("goose up (dsn %q, directory %q) failed: %v", dsn, migrationFiles, err)
 	}
 	log.Println("Successful database migration.")
