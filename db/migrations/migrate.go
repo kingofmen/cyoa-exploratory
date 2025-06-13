@@ -8,11 +8,38 @@ import (
 	"log"
 	"net"
 	"os"
+	"path/filepath"
 
 	"cloud.google.com/go/cloudsqlconn"
 	"github.com/go-sql-driver/mysql"
 	"github.com/pressly/goose/v3"
 )
+
+func printDebugInfo(migrationFiles string) error {
+	// Debug info.
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("could not get working directory: %v", err)
+	}
+	log.Printf("Working directory: %q", cwd)
+
+	entries, err := os.ReadDir(filepath.FromSlash(cwd))
+	if err != nil {
+		return fmt.Errorf("could not read working directory: %v", err)
+	}
+	for idx, entry := range entries {
+		log.Printf("Workdir entry %d: %v", idx, entry)
+	}
+	entries, err = os.ReadDir(filepath.FromSlash(migrationFiles))
+	if err != nil {
+		fmt.Errorf("could not read migration directory %q: %v", migrationFiles, err)
+	}
+	for idx, entry := range entries {
+		log.Printf("Migration entry %d: %v", idx, entry)
+	}
+
+	return nil
+}
 
 func main() {
 	// dbUser should be the service account.
@@ -51,6 +78,10 @@ func main() {
 
 	if err := goose.SetDialect("mysql"); err != nil {
 		log.Fatalf("failed to set goose dialect: %v", err)
+	}
+
+	if err := printDebugInfo(migrationFiles); err != nil {
+		log.Printf("error getting debug info: %v", err)
 	}
 
 	if err := goose.UpContext(ctx, db, migrationFiles); err != nil {
