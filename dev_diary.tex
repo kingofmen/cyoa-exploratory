@@ -25,5 +25,17 @@
   Delete operations, not sure it saved me much time but oh well, it
   was an experiment. Next step is to make all this compile on Cloud,
   since I now have two steps, the proto and then the server.
+\item[June 13th] Finally completed migration setup for Cloud SQL using
+  \verb|migrate.go| script. Gemini was helpful with the basic
+  framework but extremely sloppy about getting the strings correct: It
+  tried to set me up with a \verb|cloudsqlconn| custom dialer but gave
+  me a \verb|unix| DSN. It insisted that the user for IAM
+  authentication must be the full email address,
+  \verb|runner@whatever.com|, but did not distinguish that from the
+  database user for MySQL, which has a length limit of 32 characters
+  and was consequently just \verb|runner|. Very much not oneshot
+  success here, although on the other hand I'm not sure I would have
+  succeeded at all without getting that basic framework, so. Room for
+  improvement but still helpful, really.
 \end{itemize}
 
