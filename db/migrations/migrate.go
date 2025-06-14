@@ -57,6 +57,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to parse DSN: %v", err)
 	}
+	log.Printf("Parsed %q to %+v", dsn, config)
 
 	// Cloud SQL Go Connector with IAM auth.
 	// Note this will only work in the Cloud Run job.
@@ -79,6 +80,9 @@ func main() {
 		log.Fatalf("failed to open database: %v", err)
 	}
 	defer db.Close()
+	if err = db.Ping(); err != nil {
+		log.Printf("DB ping fails: %v", err)
+	}
 
 	if err := goose.SetDialect("mysql"); err != nil {
 		log.Fatalf("failed to set goose dialect: %v", err)
