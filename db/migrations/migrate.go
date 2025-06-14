@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"cloud.google.com/go/cloudsqlconn"
 	"github.com/go-sql-driver/mysql"
@@ -73,6 +74,10 @@ func main() {
 		return d.Dial(ctx, instanceConnectionName)
 	})
 
+	// Drop the domain part of the user if it's an email address.
+	if usr, _, found := strings.Cut(dbUser, "@"); found {
+		config.User = usr
+	}
 	dsn = config.FormatDSN()
 	log.Printf("Formatted DSN: %q", dsn)
 	db, err := sql.Open("mysql", dsn)
