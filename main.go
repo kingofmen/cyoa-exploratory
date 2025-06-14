@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -73,30 +72,22 @@ func (fc *FakeClient) ListLocations(ctx context.Context, in *spb.ListLocationsRe
 }
 
 func main() {
-	// --- Port Configuration ---
-	portStr := os.Getenv("PORT")
-	if portStr == "" {
-		portStr = "8080" // Default port for Cloud Run
-	}
-	port, err := strconv.Atoi(portStr)
+	// Read connection config from environment.
+	user := os.Getenv("CYOA_DB_USER")
+	passwd := os.Getenv("CYOA_DB_PASSWD") // For local testing, not prod!
+	network := os.Getenv("CYOA_DB_CONN_TYPE")
+	instance := os.Getenv("CYOA_DB_INSTANCE")
+	dbport := os.Getenv("CYOA_DB_PORT")
+	//env := os.Getenv("CYOA_DB_ENV")
+	dbname := os.Getenv("CYOA_DB_NAME")
+
+	dbcfg, err := initialize.FromEnv(user, passwd, network, instance, dbport, dbname)
 	if err != nil {
-		log.Fatalf("Invalid PORT environment variable: %v", err)
-	}
-	addr := ":" + strconv.Itoa(port)
-	env := os.Getenv("CYOA_DB_ENV")
-	if len(env) < 1 {
-		env = "local"
+		log.Fatalf("Could not initialize DB configuration: %v", err)
 	}
 
-	// TODO: Read from, like, actual config.
-	dbcfg := initialize.FromEnv(env).
-		WithUser(os.Getenv("CYOA_DB_USER")).
-		WithPassword(os.Getenv("CYOA_DB_PASSWD")).
-		WithName(os.Getenv("CYOA_DB_NAME"))
-	if instance := os.Getenv("CYOA_DB_INSTANCE"); len(instance) > 0 {
-		dbcfg = dbcfg.WithHost(instance)
-	}
-	dbPool, cleanup, err := initialize.ConnectionPool(dbcfg)
+	ctx := context.Background()
+	dbPool, cleanup, err := initialize.ConnectionPool(ctx, dbcfg)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
@@ -105,6 +96,10 @@ func main() {
 	}
 	defer dbPool.Close() // Close the connection pool on shutdown
 
+	addr := fmt.Sprintf(":%s", os.Getenv("PORT"))
+	if len(addr) < 2 {
+		addr = ":8080" // Default Cloud Run port.
+	}
 	// --- Main Listener ---
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -174,7 +169,7 @@ func main() {
 	//log.Println("gRPC server gracefully stopped.")
 
 	// Gracefully stop HTTP server
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second) // 10-second timeout
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second) // 10-second timeout
 	defer cancel()
 	if err := httpS.Shutdown(ctx); err != nil {
 		log.Printf("HTTP server shutdown error: %v", err)

@@ -3,16 +3,12 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
-	"net"
 	"os"
 	"path/filepath"
-	"strings"
 
-	"cloud.google.com/go/cloudsqlconn"
-	"github.com/go-sql-driver/mysql"
+	"github.com/kingofmen/cyoa-exploratory/db"
 	"github.com/pressly/goose/v3"
 )
 
@@ -43,7 +39,6 @@ func printDebugInfo(migrationFiles string) error {
 }
 
 func main() {
-	// dbUser should be the service account.
 	dbUser := os.Getenv("DB_USER")
 	dbName := os.Getenv("DB_NAME")
 	dbConn := os.Getenv("DB_CONN_TYPE")
@@ -53,41 +48,18 @@ func main() {
 		log.Fatalf("migration file location not set")
 	}
 
-	dsn := fmt.Sprintf("%s@%s(%s)/%s?parseTime=true", dbUser, dbConn, instanceConnectionName, dbName)
-	config, err := mysql.ParseDSN(dsn)
+	// No password or port for Cloud SQL IAM auth.
+	config, err := initialize.FromEnv(dbUser, "", dbConn, instanceConnectionName, "", dbName)
 	if err != nil {
-		log.Fatalf("failed to parse DSN: %v", err)
+		log.Fatalf("failed to parse configuration: %v", err)
 	}
-	log.Printf("Parsed %q to %+v", dsn, config)
 
-	// Cloud SQL Go Connector with IAM auth.
-	// Note this will only work in the Cloud Run job.
 	ctx := context.Background()
-	d, err := cloudsqlconn.NewDialer(ctx, cloudsqlconn.WithIAMAuthN())
+	db, cleanup, err := initialize.ConnectionPool(ctx, config)
 	if err != nil {
-		log.Fatalf("failed to initialize dialer: %v", err)
+		log.Fatalf("Could not initialize DB connection: %v", err)
 	}
-	defer d.Close()
-
-	mysql.RegisterDialContext("cloudsqlconn", func(ctx context.Context, addr string) (net.Conn, error) {
-		log.Printf("Dialing %q", addr)
-		return d.Dial(ctx, instanceConnectionName)
-	})
-
-	// Drop the domain part of the user if it's an email address.
-	if usr, _, found := strings.Cut(dbUser, "@"); found {
-		config.User = usr
-	}
-	dsn = config.FormatDSN()
-	log.Printf("Formatted DSN: %q", dsn)
-	db, err := sql.Open("mysql", dsn)
-	if err != nil {
-		log.Fatalf("failed to open database: %v", err)
-	}
-	defer db.Close()
-	if err = db.Ping(); err != nil {
-		log.Printf("DB ping fails: %v", err)
-	}
+	defer cleanup()
 
 	if err := goose.SetDialect("mysql"); err != nil {
 		log.Fatalf("failed to set goose dialect: %v", err)
@@ -98,7 +70,7 @@ func main() {
 	}
 
 	if err := goose.UpContext(ctx, db, filepath.FromSlash(migrationFiles)); err != nil {
-		log.Fatalf("goose up (dsn %q, directory %q) failed: %v", dsn, migrationFiles, err)
+		log.Fatalf("goose up (dsn %q, directory %q) failed: %v", config.FormatDSN(), migrationFiles, err)
 	}
 	log.Println("Successful database migration.")
 }
