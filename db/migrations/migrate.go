@@ -38,31 +38,31 @@ func printDebugInfo(migrationFiles string) error {
 	return nil
 }
 
-func main() {
+func migrate() error {
 	dbUser := os.Getenv("DB_USER")
 	dbName := os.Getenv("DB_NAME")
 	dbConn := os.Getenv("DB_CONN_TYPE")
-	instanceConnectionName := os.Getenv("INSTANCE_CONNECTION_NAME")
+	dbAddr := os.Getenv("INSTANCE_CONNECTION_NAME")
 	migrationFiles := os.Getenv("GOOSE_MIGRATION_FILES")
 	if len(migrationFiles) == 0 {
-		log.Fatalf("migration file location not set")
+		return fmt.Errorf("migration file location not set")
 	}
 
 	// No password or port for Cloud SQL IAM auth.
-	config, err := initialize.FromEnv(dbUser, "", dbConn, instanceConnectionName, "", dbName)
+	config, err := initialize.FromEnv(dbUser, "", dbConn, dbAddr, "", dbName)
 	if err != nil {
-		log.Fatalf("failed to parse configuration: %v", err)
+		return fmt.Errorf("failed to parse configuration: %v", err)
 	}
 
 	ctx := context.Background()
 	db, cleanup, err := initialize.ConnectionPool(ctx, config)
 	if err != nil {
-		log.Fatalf("Could not initialize DB connection: %v", err)
+		return fmt.Errorf("Could not initialize DB connection: %v", err)
 	}
 	defer cleanup()
 
 	if err := goose.SetDialect("mysql"); err != nil {
-		log.Fatalf("failed to set goose dialect: %v", err)
+		return fmt.Errorf("failed to set goose dialect: %v", err)
 	}
 
 	if err := printDebugInfo(migrationFiles); err != nil {
@@ -70,7 +70,14 @@ func main() {
 	}
 
 	if err := goose.UpContext(ctx, db, filepath.FromSlash(migrationFiles)); err != nil {
-		log.Fatalf("goose up (dsn %q, directory %q) failed: %v", config.FormatDSN(), migrationFiles, err)
+		return fmt.Errorf("goose up (dsn %q, directory %q) failed: %v", config.FormatDSN(), migrationFiles, err)
+	}
+	return nil
+}
+
+func main() {
+	if err := migrate(); err != nil {
+		log.Fatalf("error migrating database: %v", err)
 	}
 	log.Println("Successful database migration.")
 }

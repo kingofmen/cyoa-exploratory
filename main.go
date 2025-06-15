@@ -74,11 +74,15 @@ func (fc *FakeClient) ListLocations(ctx context.Context, in *spb.ListLocationsRe
 func main() {
 	// Read connection config from environment.
 	user := os.Getenv("CYOA_DB_USER")
-	passwd := os.Getenv("CYOA_DB_PASSWD") // For local testing, not prod!
 	network := os.Getenv("CYOA_DB_CONN_TYPE")
 	instance := os.Getenv("CYOA_DB_INSTANCE")
-	dbport := os.Getenv("CYOA_DB_PORT")
 	dbname := os.Getenv("CYOA_DB_NAME")
+
+	// For local testing.
+	passwd := os.Getenv("CYOA_DB_PASSWD")
+	dbport := os.Getenv("CYOA_DB_PORT")
+
+	log.Printf("Debug: %q %q", passwd, dbport)
 
 	dbcfg, err := initialize.FromEnv(user, passwd, network, instance, dbport, dbname)
 	if err != nil {
