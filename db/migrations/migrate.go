@@ -48,6 +48,12 @@ func migrate() error {
 		return fmt.Errorf("migration file location not set")
 	}
 
+	fullEnv := os.Environ()
+	log.Println("Environment:")
+	for _, e := range fullEnv {
+		log.Println(e)
+	}
+
 	// No password or port for Cloud SQL IAM auth.
 	config, err := initialize.FromEnv(dbUser, "", dbConn, dbAddr, "", dbName)
 	if err != nil {
