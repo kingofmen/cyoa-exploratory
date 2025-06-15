@@ -82,7 +82,11 @@ func main() {
 	passwd := os.Getenv("CYOA_DB_PASSWD")
 	dbport := os.Getenv("CYOA_DB_PORT")
 
-	log.Printf("Debug: %q %q", passwd, dbport)
+	fullEnv := os.Environ()
+	log.Println("Environment:")
+	for _, e := range fullEnv {
+		log.Println(e)
+	}
 
 	dbcfg, err := initialize.FromEnv(user, passwd, network, instance, dbport, dbname)
 	if err != nil {
