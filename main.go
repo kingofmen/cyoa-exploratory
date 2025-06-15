@@ -78,7 +78,6 @@ func main() {
 	network := os.Getenv("CYOA_DB_CONN_TYPE")
 	instance := os.Getenv("CYOA_DB_INSTANCE")
 	dbport := os.Getenv("CYOA_DB_PORT")
-	//env := os.Getenv("CYOA_DB_ENV")
 	dbname := os.Getenv("CYOA_DB_NAME")
 
 	dbcfg, err := initialize.FromEnv(user, passwd, network, instance, dbport, dbname)

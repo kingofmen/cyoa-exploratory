@@ -36,6 +36,7 @@ func ConnectionPool(ctx context.Context, cfg *mysql.Config) (*sql.DB, func() err
 		// Cloud SQL Go Connector with IAM auth.
 		// Note this will only work in the Cloud Run job, or if
 		// the Auth Proxy has been set up locally.
+		log.Printf("Initializing IAM authorization (%s)", connString)
 		d, err := cloudsqlconn.NewDialer(ctx, cloudsqlconn.WithIAMAuthN())
 		if err != nil {
 			log.Fatalf("failed to initialize dialer: %v", err)
