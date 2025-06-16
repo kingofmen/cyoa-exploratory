@@ -4,9 +4,37 @@ edition="2023";
 package story;
 option go_package = "github.com/kingofmen/cyoa-exploratory/backend/proto";
 
+message Story {
+  int64 id = 1;
+  string title = 2;
+  int64 start_location_id = 3;
+}
+
 message Location {
   int64 id = 1;
   string title = 2;
   string content = 3;
+  repeated int64 available_actions = 4;
 }
 
+message Action {
+  int64 id = 1;
+  string title = 2;
+  string description = 3;
+
+  message Effect {
+    string description = 1;
+    int64 new_location = 2;
+    string tweak_value = 3;
+    int64 tweak_amount = 4;
+  }
+
+  repeated Effect effects = 4;
+}
+
+message Playthrough {
+  int64 id = 1;
+  int64 story = 2;
+  int64 location = 3;
+  map<string, int64> values = 4;
+}
