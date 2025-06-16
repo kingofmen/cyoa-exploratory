@@ -37,5 +37,25 @@
   success here, although on the other hand I'm not sure I would have
   succeeded at all without getting that basic framework, so. Room for
   improvement but still helpful, really.
+\item[June 14th] And finally I have it! Refactoring \verb|main.go| to
+  use the new initialization was easy enough, but I struggled all day
+  with making it authorize correctly to Cloud SQL; it would chuck me
+  out every time with ``access denied (using password: YES)''. Well I
+  was not using any dang password, and spent literally hours
+  confirming that every way I could think of! Finally thought to check
+  the CloudSQL-side logs and found that the user was my service runner
+  account right enough, but the authentication was still the default
+  service account. Apparently gcloud doesn't respect the service
+  account set in the trigger! Fixed by adding
+\begin{verbatim}
+--service-account=cyoa-dev-mysql-runner@${_AR_PROJECT_ID}.iam.gserviceaccount.com
+\end{verbatim}
+  to the YAML build step. Victory! CRUD now running in the Cloud!
+\item[June 16th] So next step is to create Stories, which presumably
+  consist of a starting Location and a map from Locations to Actions,
+  which may have effects within the Location or may cause a transition
+  to a new Location. And having gotten that, I will want to create
+  Playthroughs, which reminds me that Stories need to have Characters
+  which can be precreated or custom. But first the Actions.
 \end{itemize}
 
