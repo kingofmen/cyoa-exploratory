@@ -4,6 +4,8 @@ edition="2023";
 package cyoa;
 option go_package = "github.com/kingofmen/cyoa-exploratory/backend/proto";
 
+import "backend/proto/story.proto";
+
 service Cyoa {
   rpc CreateLocation(CreateLocationRequest) returns (CreateLocationResponse) {}
   rpc UpdateLocation(UpdateLocationRequest) returns (UpdateLocationResponse) {}
@@ -11,23 +13,15 @@ service Cyoa {
   rpc ListLocations(ListLocationsRequest) returns (ListLocationsResponse) {}
 };
 
-
-
-message Location {
-  int64 id = 1;
-  string title = 2;
-  string content = 3;
-}
-
 message CreateLocationRequest {
-  Location location = 1;
+  story.Location location = 1;
 }
 
 message CreateLocationResponse{}
 
 message UpdateLocationRequest {
   int64 location_id = 1;
-  Location location = 2;
+  story.Location location = 2;
 }
 
 message UpdateLocationResponse{}
@@ -40,6 +34,6 @@ message DeleteLocationResponse{}
 
 message ListLocationsRequest{}
 message ListLocationsResponse{
-  repeated Location locations = 1;
+  repeated story.Location locations = 1;
 }
 

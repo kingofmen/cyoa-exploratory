@@ -1,0 +1,12 @@
+edition="2023";
+
+// Package story defines the objects that create a CYOA story.
+package story;
+option go_package = "github.com/kingofmen/cyoa-exploratory/backend/proto";
+
+message Location {
+  int64 id = 1;
+  string title = 2;
+  string content = 3;
+}
+
