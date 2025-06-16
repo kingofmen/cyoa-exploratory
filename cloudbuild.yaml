@@ -2,7 +2,7 @@ steps:
   - name: 'golang:1.22'
     args:
       - '-c'
-      - >
+      - |
         echo "Starting Protobuf Go code generation..."
         # Fail early if needed.
         set -euxo pipefail
