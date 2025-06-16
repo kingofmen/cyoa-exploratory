@@ -26,3 +26,6 @@ go.work.sum
 
 # Local scripting.
 *.ps1
+
+# Generated protobuf code.
+*.pb.go
