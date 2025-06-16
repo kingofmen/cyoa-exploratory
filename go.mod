@@ -5,6 +5,11 @@ go 1.23.0
 toolchain go1.23.9
 
 require (
+	github.com/google/go-cmp v0.7.0
+	google.golang.org/protobuf v1.36.6
+)
+
+require (
 	cloud.google.com/go/auth v0.16.2 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/cloudsqlconn v1.17.2 // indirect
@@ -40,5 +45,4 @@ require (
 	google.golang.org/api v0.236.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250528174236-200df99c418a // indirect
 	google.golang.org/grpc v1.73.0 // indirect
-	google.golang.org/protobuf v1.36.6 // indirect
 )
