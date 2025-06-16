@@ -13,6 +13,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	spb "github.com/kingofmen/cyoa-exploratory/backend/proto"
+	storypb "github.com/kingofmen/cyoa-exploratory/story/proto"
 )
 
 const (
@@ -30,7 +31,7 @@ const (
 // indexData holds data for the front page.
 type indexData struct {
 	Timestamp        string
-	Locations        []*spb.Location
+	Locations        []*storypb.Location
 	CreateLoc        string
 	CreateLocTitle   string
 	CreateLocContent string
@@ -44,7 +45,7 @@ type indexData struct {
 
 // locationData holds data to display a Location.
 type locationData struct {
-	Proto *spb.Location
+	Proto *storypb.Location
 }
 
 // Handler handles incoming requests. It implements http.Handler.
@@ -99,7 +100,7 @@ func (h *Handler) CreateLocation(w http.ResponseWriter, req *http.Request) {
 	data := makeIndexData()
 	title := req.FormValue(data.CreateLocTitle)
 	content := req.FormValue(data.CreateLocContent)
-	locData := &spb.Location{
+	locData := &storypb.Location{
 		Title:   &title,
 		Content: &content,
 	}
@@ -141,7 +142,7 @@ func (h *Handler) updateLocation(ctx context.Context, locID int64, title, conten
 
 	if _, err = h.client.UpdateLocation(ctx, &spb.UpdateLocationRequest{
 		LocationId: proto.Int64(locID),
-		Location: &spb.Location{
+		Location: &storypb.Location{
 			Id:      proto.Int64(locID),
 			Title:   proto.String(title),
 			Content: proto.String(content),

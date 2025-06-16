@@ -10,9 +10,10 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	spb "github.com/kingofmen/cyoa-exploratory/backend/proto"
+	storypb "github.com/kingofmen/cyoa-exploratory/story/proto"
 )
 
-func createLocationImpl(ctx context.Context, db *sql.DB, loc *spb.Location) (*spb.CreateLocationResponse, error) {
+func createLocationImpl(ctx context.Context, db *sql.DB, loc *storypb.Location) (*spb.CreateLocationResponse, error) {
 	txn, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not begin transaction: %w", err)
@@ -30,7 +31,7 @@ func createLocationImpl(ctx context.Context, db *sql.DB, loc *spb.Location) (*sp
 	return &spb.CreateLocationResponse{}, nil
 }
 
-func updateLocationImpl(ctx context.Context, db *sql.DB, id int64, loc *spb.Location) (*spb.UpdateLocationResponse, error) {
+func updateLocationImpl(ctx context.Context, db *sql.DB, id int64, loc *storypb.Location) (*spb.UpdateLocationResponse, error) {
 	log.Printf("Updating location %d: %q %q", id, loc.GetTitle(), loc.GetContent())
 	txn, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -71,7 +72,7 @@ func deleteLocationImpl(ctx context.Context, db *sql.DB, id int64) (*spb.DeleteL
 
 func listLocationsImpl(ctx context.Context, db *sql.DB, req *spb.ListLocationsRequest) (*spb.ListLocationsResponse, error) {
 	resp := &spb.ListLocationsResponse{
-		Locations: make([]*spb.Location, 0, 10),
+		Locations: make([]*storypb.Location, 0, 10),
 	}
 	txn, err := db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
 	if err != nil {
@@ -93,7 +94,7 @@ func listLocationsImpl(ctx context.Context, db *sql.DB, req *spb.ListLocationsRe
 			}
 			return nil, fmt.Errorf("error scanning location: %w", err)
 		}
-		resp.Locations = append(resp.Locations, &spb.Location{Id: proto.Int64(id), Title: &title, Content: &content})
+		resp.Locations = append(resp.Locations, &storypb.Location{Id: proto.Int64(id), Title: &title, Content: &content})
 	}
 	if err := txn.Commit(); err != nil {
 		return nil, fmt.Errorf("error committing query transaction: %w", err)

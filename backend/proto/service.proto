@@ -4,7 +4,7 @@ edition="2023";
 package cyoa;
 option go_package = "github.com/kingofmen/cyoa-exploratory/backend/proto";
 
-import "backend/proto/story.proto";
+import "story/proto/story.proto";
 
 service Cyoa {
   rpc CreateLocation(CreateLocationRequest) returns (CreateLocationResponse) {}

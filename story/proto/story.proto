@@ -2,7 +2,7 @@ edition="2023";
 
 // Package story defines the objects that create a CYOA story.
 package story;
-option go_package = "github.com/kingofmen/cyoa-exploratory/backend/proto";
+option go_package = "github.com/kingofmen/cyoa-exploratory/story/proto";
 
 message Story {
   int64 id = 1;
