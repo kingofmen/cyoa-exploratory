@@ -31,44 +31,49 @@ type FakeClient struct {
 	root *handlers.Server
 }
 
-func (fc *FakeClient) CreateLocation(ctx context.Context, in *spb.CreateLocationRequest, opts ...grpc.CallOption) (*spb.CreateLocationResponse, error) {
+func (fc *FakeClient) validate() error {
 	if fc == nil {
-		return nil, fmt.Errorf("nil client")
+		return fmt.Errorf("nil client")
 	}
 	if fc.root == nil {
-		return nil, fmt.Errorf("nil server")
+		return fmt.Errorf("nil server")
+	}
+	return nil
+}
+
+func (fc *FakeClient) CreateLocation(ctx context.Context, in *spb.CreateLocationRequest, opts ...grpc.CallOption) (*spb.CreateLocationResponse, error) {
+	if err := fc.validate(); err != nil {
+		return nil, err
 	}
 	return fc.root.CreateLocation(ctx, in)
 }
 
 func (fc *FakeClient) UpdateLocation(ctx context.Context, in *spb.UpdateLocationRequest, opts ...grpc.CallOption) (*spb.UpdateLocationResponse, error) {
-	if fc == nil {
-		return nil, fmt.Errorf("nil client")
-	}
-	if fc.root == nil {
-		return nil, fmt.Errorf("nil server")
+	if err := fc.validate(); err != nil {
+		return nil, err
 	}
 	return fc.root.UpdateLocation(ctx, in)
 }
 
 func (fc *FakeClient) DeleteLocation(ctx context.Context, in *spb.DeleteLocationRequest, opts ...grpc.CallOption) (*spb.DeleteLocationResponse, error) {
-	if fc == nil {
-		return nil, fmt.Errorf("nil client")
-	}
-	if fc.root == nil {
-		return nil, fmt.Errorf("nil server")
+	if err := fc.validate(); err != nil {
+		return nil, err
 	}
 	return fc.root.DeleteLocation(ctx, in)
 }
 
 func (fc *FakeClient) ListLocations(ctx context.Context, in *spb.ListLocationsRequest, opts ...grpc.CallOption) (*spb.ListLocationsResponse, error) {
-	if fc == nil {
-		return nil, fmt.Errorf("nil client")
-	}
-	if fc.root == nil {
-		return nil, fmt.Errorf("nil server")
+	if err := fc.validate(); err != nil {
+		return nil, err
 	}
 	return fc.root.ListLocations(ctx, in)
+}
+
+func (fc *FakeClient) CreateStory(ctx context.Context, in *spb.CreateStoryRequest, opts ...grpc.CallOption) (*spb.CreateStoryResponse, error) {
+	if err := fc.validate(); err != nil {
+		return nil, err
+	}
+	return fc.root.CreateStory(ctx, in)
 }
 
 func main() {

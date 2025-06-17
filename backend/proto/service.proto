@@ -11,6 +11,8 @@ service Cyoa {
   rpc UpdateLocation(UpdateLocationRequest) returns (UpdateLocationResponse) {}
   rpc DeleteLocation(DeleteLocationRequest) returns (DeleteLocationResponse) {}
   rpc ListLocations(ListLocationsRequest) returns (ListLocationsResponse) {}
+
+  rpc CreateStory(CreateStoryRequest) returns (CreateStoryResponse) {}
 };
 
 message CreateLocationRequest {
@@ -37,3 +39,5 @@ message ListLocationsResponse{
   repeated story.Location locations = 1;
 }
 
+message CreateStoryRequest{}
+message CreateStoryResponse{}

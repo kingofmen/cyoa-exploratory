@@ -70,3 +70,7 @@ func (s *Server) ListLocations(ctx context.Context, req *spb.ListLocationsReques
 	}
 	return resp, nil
 }
+
+func (s *Server) CreateStory(ctx context.Context, req *spb.CreateStoryRequest) (*spb.CreateStoryResponse, error) {
+	return nil, nil
+}
