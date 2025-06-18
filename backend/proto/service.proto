@@ -10,29 +10,38 @@ service Cyoa {
   rpc CreateLocation(CreateLocationRequest) returns (CreateLocationResponse) {}
   rpc UpdateLocation(UpdateLocationRequest) returns (UpdateLocationResponse) {}
   rpc DeleteLocation(DeleteLocationRequest) returns (DeleteLocationResponse) {}
+  rpc GetLocation(GetLocationRequest) returns (GetLocationResponse) {}
   rpc ListLocations(ListLocationsRequest) returns (ListLocationsResponse) {}
 
   rpc CreateStory(CreateStoryRequest) returns (CreateStoryResponse) {}
+  rpc UpdateStory(UpdateStoryRequest) returns (UpdateStoryResponse) {}
+  rpc DeleteStory(DeleteStoryRequest) returns (DeleteStoryResponse) {}
+  rpc GetStory(GetStoryRequest) returns (GetStoryResponse) {}
+  rpc ListStories(ListStoriesRequest) returns (ListStoriesResponse) {}
 };
 
 message CreateLocationRequest {
   story.Location location = 1;
 }
-
 message CreateLocationResponse{}
 
 message UpdateLocationRequest {
   int64 location_id = 1;
   story.Location location = 2;
 }
-
 message UpdateLocationResponse{}
 
 message DeleteLocationRequest {
   int64 location_id = 1;
 }
-
 message DeleteLocationResponse{}
+
+message GetLocationRequest {
+  int64 location_id = 1;
+}
+message GetLocationResponse{
+  story.Location location = 1;
+}
 
 message ListLocationsRequest{}
 message ListLocationsResponse{
@@ -41,3 +50,15 @@ message ListLocationsResponse{
 
 message CreateStoryRequest{}
 message CreateStoryResponse{}
+
+message UpdateStoryRequest {}
+message UpdateStoryResponse{}
+
+message DeleteStoryRequest {}
+message DeleteStoryResponse{}
+
+message GetStoryRequest {}
+message GetStoryResponse{}
+
+message ListStoriesRequest{}
+message ListStoriesResponse{}

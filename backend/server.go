@@ -63,6 +63,17 @@ func (s *Server) DeleteLocation(ctx context.Context, req *spb.DeleteLocationRequ
 	return resp, nil
 }
 
+func (s *Server) GetLocation(ctx context.Context, req *spb.GetLocationRequest) (*spb.GetLocationResponse, error) {
+	if req.GetLocationId() < 1 {
+		return nil, fmt.Errorf("location ID not specified")
+	}
+	resp, err := getLocationImpl(ctx, s.db, req.GetLocationId())
+	if err != nil {
+		return nil, fmt.Errorf("GetLocation error: %w", err)
+	}
+	return resp, nil
+}
+
 func (s *Server) ListLocations(ctx context.Context, req *spb.ListLocationsRequest) (*spb.ListLocationsResponse, error) {
 	resp, err := listLocationsImpl(ctx, s.db, req)
 	if err != nil {
@@ -72,5 +83,21 @@ func (s *Server) ListLocations(ctx context.Context, req *spb.ListLocationsReques
 }
 
 func (s *Server) CreateStory(ctx context.Context, req *spb.CreateStoryRequest) (*spb.CreateStoryResponse, error) {
-	return nil, nil
+	return &spb.CreateStoryResponse{}, nil
+}
+
+func (s *Server) UpdateStory(ctx context.Context, req *spb.UpdateStoryRequest) (*spb.UpdateStoryResponse, error) {
+	return &spb.UpdateStoryResponse{}, nil
+}
+
+func (s *Server) DeleteStory(ctx context.Context, req *spb.DeleteStoryRequest) (*spb.DeleteStoryResponse, error) {
+	return &spb.DeleteStoryResponse{}, nil
+}
+
+func (s *Server) GetStory(ctx context.Context, req *spb.GetStoryRequest) (*spb.GetStoryResponse, error) {
+	return &spb.GetStoryResponse{}, nil
+}
+
+func (s *Server) ListStories(ctx context.Context, req *spb.ListStoriesRequest) (*spb.ListStoriesResponse, error) {
+	return &spb.ListStoriesResponse{}, nil
 }

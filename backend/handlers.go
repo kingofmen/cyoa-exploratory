@@ -70,6 +70,32 @@ func deleteLocationImpl(ctx context.Context, db *sql.DB, id int64) (*spb.DeleteL
 	return &spb.DeleteLocationResponse{}, nil
 }
 
+func getLocationImpl(ctx context.Context, db *sql.DB, id int64) (*spb.GetLocationResponse, error) {
+	txn, err := db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		return nil, fmt.Errorf("could not begin transaction: %w", err)
+	}
+	row := txn.QueryRowContext(ctx, `SELECT l.id, l.title, l.content FROM Locations AS l WHERE l.id = ?`, id)
+	var title, content string
+	if err := row.Scan(&id, &title, &content); err != nil {
+		if rerr := txn.Rollback(); rerr != nil {
+			return nil, fmt.Errorf("error scanning location: %w; rollback failed: %w", err, rerr)
+		}
+		return nil, fmt.Errorf("error scanning location: %w", err)
+	}
+
+	if err := txn.Commit(); err != nil {
+		return nil, fmt.Errorf("could not write to database: %w", err)
+	}
+	return &spb.GetLocationResponse{
+		Location: &storypb.Location{
+			Id:      proto.Int64(id),
+			Title:   proto.String(title),
+			Content: proto.String(content),
+		},
+	}, nil
+}
+
 func listLocationsImpl(ctx context.Context, db *sql.DB, req *spb.ListLocationsRequest) (*spb.ListLocationsResponse, error) {
 	resp := &spb.ListLocationsResponse{
 		Locations: make([]*storypb.Location, 0, 10),
@@ -94,7 +120,11 @@ func listLocationsImpl(ctx context.Context, db *sql.DB, req *spb.ListLocationsRe
 			}
 			return nil, fmt.Errorf("error scanning location: %w", err)
 		}
-		resp.Locations = append(resp.Locations, &storypb.Location{Id: proto.Int64(id), Title: &title, Content: &content})
+		resp.Locations = append(resp.Locations, &storypb.Location{
+			Id:      proto.Int64(id),
+			Title:   proto.String(title),
+			Content: proto.String(content),
+		})
 	}
 	if err := txn.Commit(); err != nil {
 		return nil, fmt.Errorf("error committing query transaction: %w", err)

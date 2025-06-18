@@ -62,6 +62,13 @@ func (fc *FakeClient) DeleteLocation(ctx context.Context, in *spb.DeleteLocation
 	return fc.root.DeleteLocation(ctx, in)
 }
 
+func (fc *FakeClient) GetLocation(ctx context.Context, in *spb.GetLocationRequest, opts ...grpc.CallOption) (*spb.GetLocationResponse, error) {
+	if err := fc.validate(); err != nil {
+		return nil, err
+	}
+	return fc.root.GetLocation(ctx, in)
+}
+
 func (fc *FakeClient) ListLocations(ctx context.Context, in *spb.ListLocationsRequest, opts ...grpc.CallOption) (*spb.ListLocationsResponse, error) {
 	if err := fc.validate(); err != nil {
 		return nil, err
@@ -74,6 +81,34 @@ func (fc *FakeClient) CreateStory(ctx context.Context, in *spb.CreateStoryReques
 		return nil, err
 	}
 	return fc.root.CreateStory(ctx, in)
+}
+
+func (fc *FakeClient) UpdateStory(ctx context.Context, in *spb.UpdateStoryRequest, opts ...grpc.CallOption) (*spb.UpdateStoryResponse, error) {
+	if err := fc.validate(); err != nil {
+		return nil, err
+	}
+	return fc.root.UpdateStory(ctx, in)
+}
+
+func (fc *FakeClient) DeleteStory(ctx context.Context, in *spb.DeleteStoryRequest, opts ...grpc.CallOption) (*spb.DeleteStoryResponse, error) {
+	if err := fc.validate(); err != nil {
+		return nil, err
+	}
+	return fc.root.DeleteStory(ctx, in)
+}
+
+func (fc *FakeClient) GetStory(ctx context.Context, in *spb.GetStoryRequest, opts ...grpc.CallOption) (*spb.GetStoryResponse, error) {
+	if err := fc.validate(); err != nil {
+		return nil, err
+	}
+	return fc.root.GetStory(ctx, in)
+}
+
+func (fc *FakeClient) ListStories(ctx context.Context, in *spb.ListStoriesRequest, opts ...grpc.CallOption) (*spb.ListStoriesResponse, error) {
+	if err := fc.validate(); err != nil {
+		return nil, err
+	}
+	return fc.root.ListStories(ctx, in)
 }
 
 func main() {
