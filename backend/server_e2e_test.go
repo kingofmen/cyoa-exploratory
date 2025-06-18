@@ -11,8 +11,10 @@ import (
 	"github.com/pressly/goose/v3"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/mysql"
+	"google.golang.org/protobuf/proto"
 
 	spb "github.com/kingofmen/cyoa-exploratory/backend/proto"
+	storypb "github.com/kingofmen/cyoa-exploratory/story/proto"
 )
 
 var db *sql.DB
@@ -65,7 +67,27 @@ func TestMain(m *testing.M) {
 func TestStoryE2E(t *testing.T) {
 	ctx := context.Background()
 	srv := New(db)
-	if _, err := srv.CreateStory(ctx, &spb.CreateStoryRequest{}); err != nil {
+	csresp, err := srv.CreateStory(ctx, &spb.CreateStoryRequest{
+		Story: &storypb.Story{
+			Title:       proto.String("E2E test story"),
+			Description: proto.String("Story for end-to-end testing"),
+		},
+	})
+	if err != nil {
 		t.Fatalf("CreateStory() => %v, want nil", err)
 	}
+	stid := csresp.GetStory().GetId()
+	if stid != 1 {
+		t.Fatalf("CreateStory() returned story ID %d, want 1", stid)
+	}
+
+	if _, err := srv.CreateLocation(ctx, &spb.CreateLocationRequest{
+		Location: &storypb.Location{
+			Title:   proto.String("Choose Character"),
+			Content: proto.String("Choose which character to play as."),
+		},
+	}); err != nil {
+		t.Fatalf("CreateLocation() => %v, want nil", err)
+	}
+
 }

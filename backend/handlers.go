@@ -13,6 +13,14 @@ import (
 	storypb "github.com/kingofmen/cyoa-exploratory/story/proto"
 )
 
+// txnError attempts to roll back the transaction and returns a commented error.
+func txnError(comment string, txn *sql.Tx, err error) error {
+	if rerr := txn.Rollback(); rerr != nil {
+		return fmt.Errorf("%s: %w; rollback failed: %w", comment, err, rerr)
+	}
+	return fmt.Errorf("%s: %w", comment, err)
+}
+
 func createLocationImpl(ctx context.Context, db *sql.DB, loc *storypb.Location) (*spb.CreateLocationResponse, error) {
 	txn, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -130,4 +138,28 @@ func listLocationsImpl(ctx context.Context, db *sql.DB, req *spb.ListLocationsRe
 		return nil, fmt.Errorf("error committing query transaction: %w", err)
 	}
 	return resp, nil
+}
+
+func createStoryImpl(ctx context.Context, db *sql.DB, str *storypb.Story) (*spb.CreateStoryResponse, error) {
+	txn, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("could not begin transaction: %w", err)
+	}
+
+	if _, err := txn.ExecContext(ctx, `INSERT INTO Stories (title, description) VALUES (?, ?)`, str.GetTitle(), str.GetDescription()); err != nil {
+		return nil, txnError("could not insert into Stories", txn, err)
+	}
+	var sid int64
+	row := txn.QueryRowContext(ctx, `SELECT LAST_INSERT_ID()`)
+	if err := row.Scan(&sid); err != nil {
+		return nil, txnError("could not read back created ID", txn, err)
+	}
+	if err := txn.Commit(); err != nil {
+		return nil, txnError("could not write to database", txn, err)
+	}
+
+	str.Id = proto.Int64(sid)
+	return &spb.CreateStoryResponse{
+		Story: str,
+	}, nil
 }

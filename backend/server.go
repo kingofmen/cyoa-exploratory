@@ -83,7 +83,18 @@ func (s *Server) ListLocations(ctx context.Context, req *spb.ListLocationsReques
 }
 
 func (s *Server) CreateStory(ctx context.Context, req *spb.CreateStoryRequest) (*spb.CreateStoryResponse, error) {
-	return &spb.CreateStoryResponse{}, nil
+	loc := req.GetStory()
+	if loc == nil {
+		return nil, fmt.Errorf("CreateStory called with nil story")
+	}
+	if len(loc.GetTitle()) < 1 {
+		return nil, fmt.Errorf("cannot create story with empty title")
+	}
+	resp, err := createStoryImpl(ctx, s.db, loc)
+	if err != nil {
+		return nil, fmt.Errorf("CreateStory error: %w", err)
+	}
+	return resp, nil
 }
 
 func (s *Server) UpdateStory(ctx context.Context, req *spb.UpdateStoryRequest) (*spb.UpdateStoryResponse, error) {

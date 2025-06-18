@@ -48,8 +48,12 @@ message ListLocationsResponse{
   repeated story.Location locations = 1;
 }
 
-message CreateStoryRequest{}
-message CreateStoryResponse{}
+message CreateStoryRequest{
+  story.Story story = 1;
+}
+message CreateStoryResponse{
+  story.Story story = 1;
+}
 
 message UpdateStoryRequest {}
 message UpdateStoryResponse{}
