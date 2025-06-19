@@ -8,10 +8,13 @@ import (
 	"testing"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/google/go-cmp/cmp"
 	"github.com/pressly/goose/v3"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/mysql"
+	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/testing/protocmp"
 
 	spb "github.com/kingofmen/cyoa-exploratory/backend/proto"
 	storypb "github.com/kingofmen/cyoa-exploratory/story/proto"
@@ -81,13 +84,66 @@ func TestStoryE2E(t *testing.T) {
 		t.Fatalf("CreateStory() returned story ID %d, want 1", stid)
 	}
 
-	if _, err := srv.CreateLocation(ctx, &spb.CreateLocationRequest{
+	clresp1, err := srv.CreateLocation(ctx, &spb.CreateLocationRequest{
 		Location: &storypb.Location{
 			Title:   proto.String("Choose Character"),
 			Content: proto.String("Choose which character to play as."),
 		},
-	}); err != nil {
-		t.Fatalf("CreateLocation() => %v, want nil", err)
+	})
+	if err != nil {
+		t.Fatalf("CreateLocation(1) => %v, want nil", err)
+	}
+	exploc := &storypb.Location{
+		Id:      proto.Int64(1),
+		Title:   proto.String("Choose Character"),
+		Content: proto.String("Choose which character to play as."),
+	}
+	if diff := cmp.Diff(clresp1.GetLocation(), exploc, protocmp.Transform()); diff != "" {
+		t.Errorf("After CreateLocation(1): %s, want %s, diff %s", prototext.Format(clresp1.GetLocation()), prototext.Format(exploc), diff)
+	}
+
+	loc1id := clresp1.GetLocation().GetId()
+	clresp2, err := srv.CreateLocation(ctx, &spb.CreateLocationRequest{
+		Location: &storypb.Location{
+			Title:   proto.String("Ogre Encounter"),
+			Content: proto.String("Either fight the ogre or attempt to sneak past it."),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateLocation(2) => %v, want nil", err)
+	}
+	exploc = &storypb.Location{
+		Id:      proto.Int64(2),
+		Title:   proto.String("Ogre Encounter"),
+		Content: proto.String("Either fight the ogre or attempt to sneak past it."),
+	}
+	if diff := cmp.Diff(clresp2.GetLocation(), exploc, protocmp.Transform()); diff != "" {
+		t.Errorf("After CreateLocation(2): %s, want %s, diff %s", prototext.Format(clresp2.GetLocation()), prototext.Format(exploc), diff)
+	}
+	if llresp, err := srv.ListLocations(ctx, &spb.ListLocationsRequest{}); err != nil || len(llresp.GetLocations()) != 2 {
+		t.Fatalf("Created 2 locations but List finds %d: %s error: %v", len(llresp.GetLocations()), prototext.Format(llresp), err)
+	}
+	//loc2id := clresp2.GetLocation().GetId()
+
+	usresp, err := srv.UpdateStory(ctx, &spb.UpdateStoryRequest{
+		Story: &storypb.Story{
+			Id:              proto.Int64(stid),
+			StartLocationId: proto.Int64(loc1id),
+		},
+	})
+	if err != nil {
+		t.Fatalf("UpdateStory() => %v, want nil", err)
+	}
+
+	got := usresp.GetStory()
+	want := &storypb.Story{
+		Id:              proto.Int64(1),
+		Title:           proto.String("E2E test story"),
+		Description:     proto.String("Story for end-to-end testing"),
+		StartLocationId: proto.Int64(1),
+	}
+	if diff := cmp.Diff(got, want, protocmp.Transform()); diff != "" {
+		t.Errorf("After UpdateStory: %s, want %s, diff %s (%s)", prototext.Format(got), prototext.Format(want), diff, prototext.Format(clresp1))
 	}
 
 }

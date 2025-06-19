@@ -23,13 +23,17 @@ service Cyoa {
 message CreateLocationRequest {
   story.Location location = 1;
 }
-message CreateLocationResponse{}
+message CreateLocationResponse{
+  story.Location location = 1;
+}
 
 message UpdateLocationRequest {
   int64 location_id = 1;
   story.Location location = 2;
 }
-message UpdateLocationResponse{}
+message UpdateLocationResponse{
+  story.Location location = 1;
+}
 
 message DeleteLocationRequest {
   int64 location_id = 1;
@@ -55,8 +59,12 @@ message CreateStoryResponse{
   story.Story story = 1;
 }
 
-message UpdateStoryRequest {}
-message UpdateStoryResponse{}
+message UpdateStoryRequest {
+  story.Story story = 1;
+}
+message UpdateStoryResponse{
+  story.Story story = 1;
+}
 
 message DeleteStoryRequest {}
 message DeleteStoryResponse{}

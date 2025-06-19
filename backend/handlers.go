@@ -5,7 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 
 	"google.golang.org/protobuf/proto"
 
@@ -27,20 +26,29 @@ func createLocationImpl(ctx context.Context, db *sql.DB, loc *storypb.Location) 
 		return nil, fmt.Errorf("could not begin transaction: %w", err)
 	}
 	if _, err := txn.ExecContext(ctx, `INSERT INTO Locations (title, content) VALUES (?, ?)`, loc.GetTitle(), loc.GetContent()); err != nil {
-		if rerr := txn.Rollback(); rerr != nil {
-			return nil, fmt.Errorf("could not write to transaction: %w; rollback failed: %w", err, rerr)
-		}
-		return nil, fmt.Errorf("could not write to transaction: %w", err)
+		return nil, txnError("could not insert into Locations", txn, err)
 	}
+
+	var lid int64
+	row := txn.QueryRowContext(ctx, `SELECT LAST_INSERT_ID()`)
+	if err := row.Scan(&lid); err != nil {
+		return nil, txnError("could not read back created location ID", txn, err)
+	}
+
 	if err := txn.Commit(); err != nil {
 		return nil, fmt.Errorf("could not write to database: %w", err)
 	}
 
-	return &spb.CreateLocationResponse{}, nil
+	return &spb.CreateLocationResponse{
+		Location: &storypb.Location{
+			Id:      proto.Int64(lid),
+			Title:   proto.String(loc.GetTitle()),
+			Content: proto.String(loc.GetContent()),
+		},
+	}, nil
 }
 
 func updateLocationImpl(ctx context.Context, db *sql.DB, id int64, loc *storypb.Location) (*spb.UpdateLocationResponse, error) {
-	log.Printf("Updating location %d: %q %q", id, loc.GetTitle(), loc.GetContent())
 	txn, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not begin transaction: %w", err)
@@ -56,7 +64,13 @@ func updateLocationImpl(ctx context.Context, db *sql.DB, id int64, loc *storypb.
 		return nil, fmt.Errorf("could not write to database: %w", err)
 	}
 
-	return &spb.UpdateLocationResponse{}, nil
+	return &spb.UpdateLocationResponse{
+		Location: &storypb.Location{
+			Id:      proto.Int64(id),
+			Title:   proto.String(loc.GetTitle()),
+			Content: proto.String(loc.GetContent()),
+		},
+	}, nil
 }
 
 func deleteLocationImpl(ctx context.Context, db *sql.DB, id int64) (*spb.DeleteLocationResponse, error) {
@@ -161,5 +175,54 @@ func createStoryImpl(ctx context.Context, db *sql.DB, str *storypb.Story) (*spb.
 	str.Id = proto.Int64(sid)
 	return &spb.CreateStoryResponse{
 		Story: str,
+	}, nil
+}
+
+func updateStoryImpl(ctx context.Context, db *sql.DB, str *storypb.Story) (*spb.UpdateStoryResponse, error) {
+	txn, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("could not begin transaction: %w", err)
+	}
+
+	sid := str.GetId()
+	row := txn.QueryRowContext(ctx, `SELECT * FROM Stories AS s WHERE s.id = ?`, sid)
+	var slocid sql.NullInt64
+	var title string
+	var desc sql.NullString
+	if err := row.Scan(&sid, &title, &desc, &slocid); err != nil {
+		return nil, txnError(fmt.Sprintf("could not read story %d", sid), txn, err)
+	}
+	if nt := str.GetTitle(); len(nt) > 0 {
+		title = nt
+	}
+	if nd := str.GetDescription(); len(nd) > 0 {
+		desc.String = nd
+		desc.Valid = true
+	}
+	if nsl := str.GetStartLocationId(); nsl > 0 {
+		slocid.Int64 = nsl
+		slocid.Valid = true
+	}
+
+	if _, err := txn.ExecContext(ctx, `UPDATE Stories SET title = ?, description = ?, start_location = ? WHERE id = ?`, title, desc, slocid, sid); err != nil {
+		return nil, txnError(fmt.Sprintf("could not update story %d", sid), txn, err)
+	}
+	if err := txn.Commit(); err != nil {
+		return nil, txnError("could not write to database", txn, err)
+	}
+
+	ret := &storypb.Story{
+		Id:    proto.Int64(sid),
+		Title: proto.String(title),
+	}
+	if desc.Valid {
+		ret.Description = proto.String(desc.String)
+	}
+	if slocid.Valid {
+		ret.StartLocationId = proto.Int64(slocid.Int64)
+	}
+
+	return &spb.UpdateStoryResponse{
+		Story: ret,
 	}, nil
 }

@@ -83,14 +83,14 @@ func (s *Server) ListLocations(ctx context.Context, req *spb.ListLocationsReques
 }
 
 func (s *Server) CreateStory(ctx context.Context, req *spb.CreateStoryRequest) (*spb.CreateStoryResponse, error) {
-	loc := req.GetStory()
-	if loc == nil {
+	str := req.GetStory()
+	if str == nil {
 		return nil, fmt.Errorf("CreateStory called with nil story")
 	}
-	if len(loc.GetTitle()) < 1 {
+	if len(str.GetTitle()) < 1 {
 		return nil, fmt.Errorf("cannot create story with empty title")
 	}
-	resp, err := createStoryImpl(ctx, s.db, loc)
+	resp, err := createStoryImpl(ctx, s.db, str)
 	if err != nil {
 		return nil, fmt.Errorf("CreateStory error: %w", err)
 	}
@@ -98,7 +98,18 @@ func (s *Server) CreateStory(ctx context.Context, req *spb.CreateStoryRequest) (
 }
 
 func (s *Server) UpdateStory(ctx context.Context, req *spb.UpdateStoryRequest) (*spb.UpdateStoryResponse, error) {
-	return &spb.UpdateStoryResponse{}, nil
+	str := req.GetStory()
+	if str == nil {
+		return nil, fmt.Errorf("UpdateStory called with nil story")
+	}
+	if id := str.GetId(); id < 1 {
+		return nil, fmt.Errorf("UpdateStory called with invalid story ID %d", id)
+	}
+	resp, err := updateStoryImpl(ctx, s.db, str)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateStory error: %w", err)
+	}
+	return resp, nil
 }
 
 func (s *Server) DeleteStory(ctx context.Context, req *spb.DeleteStoryRequest) (*spb.DeleteStoryResponse, error) {
