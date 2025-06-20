@@ -112,6 +112,8 @@ func TestStoryE2E(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateLocation(2) => %v, want nil", err)
 	}
+	loc2id := clresp2.GetLocation().GetId()
+
 	exploc = &storypb.Location{
 		Id:      proto.Int64(2),
 		Title:   proto.String("Ogre Encounter"),
@@ -123,7 +125,6 @@ func TestStoryE2E(t *testing.T) {
 	if llresp, err := srv.ListLocations(ctx, &spb.ListLocationsRequest{}); err != nil || len(llresp.GetLocations()) != 2 {
 		t.Fatalf("Created 2 locations but List finds %d: %s error: %v", len(llresp.GetLocations()), prototext.Format(llresp), err)
 	}
-	//loc2id := clresp2.GetLocation().GetId()
 
 	usresp, err := srv.UpdateStory(ctx, &spb.UpdateStoryRequest{
 		Story: &storypb.Story{
@@ -144,6 +145,48 @@ func TestStoryE2E(t *testing.T) {
 	}
 	if diff := cmp.Diff(got, want, protocmp.Transform()); diff != "" {
 		t.Errorf("After UpdateStory: %s, want %s, diff %s (%s)", prototext.Format(got), prototext.Format(want), diff, prototext.Format(clresp1))
+	}
+
+	act1 := &storypb.Action{
+		Title:       proto.String("Fighter"),
+		Description: proto.String("A mighty warrior!"),
+		Effects: []*storypb.Action_Effect{
+			&storypb.Action_Effect{
+				NewLocation: proto.Int64(loc2id),
+				TweakValue:  proto.String("Strength"),
+				TweakAmount: proto.Int64(5),
+			},
+		},
+	}
+	act2 := &storypb.Action{
+		Title:       proto.String("Rogue"),
+		Description: proto.String("A cunning thief!"),
+		Effects: []*storypb.Action_Effect{
+			&storypb.Action_Effect{
+				NewLocation: proto.Int64(loc2id),
+				TweakValue:  proto.String("Dexterity"),
+				TweakAmount: proto.Int64(5),
+			},
+		},
+	}
+	act3 := &storypb.Action{
+		Title:       proto.String("Attack!"),
+		Description: proto.String("Fight the ogre with your sword."),
+	}
+	act4 := &storypb.Action{
+		Title:       proto.String("Slow and sneaky wins the race..."),
+		Description: proto.String("Sneak past the ogre."),
+	}
+
+	actions := []*storypb.Action{act1, act2, act3, act4}
+	for idx, act := range actions {
+		_, err := srv.CreateAction(ctx, &spb.CreateActionRequest{
+			Action: act,
+		})
+		if err != nil {
+			t.Fatalf("Could not create action %d: %v", idx, err)
+		}
+
 	}
 
 }

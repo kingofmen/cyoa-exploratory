@@ -226,3 +226,38 @@ func updateStoryImpl(ctx context.Context, db *sql.DB, str *storypb.Story) (*spb.
 		Story: ret,
 	}, nil
 }
+
+func createActionImpl(ctx context.Context, db *sql.DB, act *storypb.Action) (*spb.CreateActionResponse, error) {
+	blob, err := proto.Marshal(act)
+	if err != nil {
+		return nil, fmt.Errorf("could not marshal Action: %v", err)
+	}
+	txn, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("could not begin transaction: %w", err)
+	}
+
+	if _, err := txn.ExecContext(ctx, `INSERT INTO Actions (proto) VALUES (?)`, blob); err != nil {
+		return nil, txnError("could not insert into Actions", txn, err)
+	}
+	var aid int64
+	row := txn.QueryRowContext(ctx, `SELECT LAST_INSERT_ID()`)
+	if err := row.Scan(&aid); err != nil {
+		return nil, txnError("could not read back created ID", txn, err)
+	}
+	if err := txn.Commit(); err != nil {
+		return nil, txnError("could not write to database", txn, err)
+	}
+
+	act.Id = proto.Int64(aid)
+	return &spb.CreateActionResponse{
+		Action: act,
+	}, nil
+}
+
+func updateActionImpl(ctx context.Context, db *sql.DB, act *storypb.Action) (*spb.UpdateActionResponse, error) {
+	// TODO: Implement me.
+	return &spb.UpdateActionResponse{
+		Action: act,
+	}, nil
+}

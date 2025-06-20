@@ -18,8 +18,15 @@ service Cyoa {
   rpc DeleteStory(DeleteStoryRequest) returns (DeleteStoryResponse) {}
   rpc GetStory(GetStoryRequest) returns (GetStoryResponse) {}
   rpc ListStories(ListStoriesRequest) returns (ListStoriesResponse) {}
+
+  rpc CreateAction(CreateActionRequest) returns (CreateActionResponse) {}
+  rpc UpdateAction(UpdateActionRequest) returns (UpdateActionResponse) {}
+  rpc DeleteAction(DeleteActionRequest) returns (DeleteActionResponse) {}
+  rpc GetAction(GetActionRequest) returns (GetActionResponse) {}
+  rpc ListActions(ListActionsRequest) returns (ListActionsResponse) {}
 };
 
+// Locations.
 message CreateLocationRequest {
   story.Location location = 1;
 }
@@ -52,6 +59,7 @@ message ListLocationsResponse{
   repeated story.Location locations = 1;
 }
 
+// Stories.
 message CreateStoryRequest{
   story.Story story = 1;
 }
@@ -74,3 +82,27 @@ message GetStoryResponse{}
 
 message ListStoriesRequest{}
 message ListStoriesResponse{}
+
+// Actions.
+message CreateActionRequest{
+  story.Action action = 1;
+}
+message CreateActionResponse{
+  story.Action action = 1;
+}
+
+message UpdateActionRequest {
+  story.Action action = 1;
+}
+message UpdateActionResponse{
+  story.Action action = 1;
+}
+
+message DeleteActionRequest {}
+message DeleteActionResponse{}
+
+message GetActionRequest {}
+message GetActionResponse{}
+
+message ListActionsRequest{}
+message ListActionsResponse{}

@@ -111,6 +111,41 @@ func (fc *FakeClient) ListStories(ctx context.Context, in *spb.ListStoriesReques
 	return fc.root.ListStories(ctx, in)
 }
 
+func (fc *FakeClient) CreateAction(ctx context.Context, in *spb.CreateActionRequest, opts ...grpc.CallOption) (*spb.CreateActionResponse, error) {
+	if err := fc.validate(); err != nil {
+		return nil, err
+	}
+	return fc.root.CreateAction(ctx, in)
+}
+
+func (fc *FakeClient) UpdateAction(ctx context.Context, in *spb.UpdateActionRequest, opts ...grpc.CallOption) (*spb.UpdateActionResponse, error) {
+	if err := fc.validate(); err != nil {
+		return nil, err
+	}
+	return fc.root.UpdateAction(ctx, in)
+}
+
+func (fc *FakeClient) DeleteAction(ctx context.Context, in *spb.DeleteActionRequest, opts ...grpc.CallOption) (*spb.DeleteActionResponse, error) {
+	if err := fc.validate(); err != nil {
+		return nil, err
+	}
+	return fc.root.DeleteAction(ctx, in)
+}
+
+func (fc *FakeClient) GetAction(ctx context.Context, in *spb.GetActionRequest, opts ...grpc.CallOption) (*spb.GetActionResponse, error) {
+	if err := fc.validate(); err != nil {
+		return nil, err
+	}
+	return fc.root.GetAction(ctx, in)
+}
+
+func (fc *FakeClient) ListActions(ctx context.Context, in *spb.ListActionsRequest, opts ...grpc.CallOption) (*spb.ListActionsResponse, error) {
+	if err := fc.validate(); err != nil {
+		return nil, err
+	}
+	return fc.root.ListActions(ctx, in)
+}
+
 func main() {
 	// Read connection config from environment.
 	user := os.Getenv("CYOA_DB_USER")

@@ -123,3 +123,45 @@ func (s *Server) GetStory(ctx context.Context, req *spb.GetStoryRequest) (*spb.G
 func (s *Server) ListStories(ctx context.Context, req *spb.ListStoriesRequest) (*spb.ListStoriesResponse, error) {
 	return &spb.ListStoriesResponse{}, nil
 }
+
+func (s *Server) CreateAction(ctx context.Context, req *spb.CreateActionRequest) (*spb.CreateActionResponse, error) {
+	act := req.GetAction()
+	if act == nil {
+		return nil, fmt.Errorf("CreateAction called with nil action")
+	}
+	if len(act.GetTitle()) < 1 {
+		return nil, fmt.Errorf("cannot create action with empty title")
+	}
+	resp, err := createActionImpl(ctx, s.db, act)
+	if err != nil {
+		return nil, fmt.Errorf("CreateAction error: %w", err)
+	}
+	return resp, nil
+}
+
+func (s *Server) UpdateAction(ctx context.Context, req *spb.UpdateActionRequest) (*spb.UpdateActionResponse, error) {
+	act := req.GetAction()
+	if act == nil {
+		return nil, fmt.Errorf("UpdateAction called with nil action")
+	}
+	if id := act.GetId(); id < 1 {
+		return nil, fmt.Errorf("UpdateAction called with invalid action ID %d", id)
+	}
+	resp, err := updateActionImpl(ctx, s.db, act)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateAction error: %w", err)
+	}
+	return resp, nil
+}
+
+func (s *Server) DeleteAction(ctx context.Context, req *spb.DeleteActionRequest) (*spb.DeleteActionResponse, error) {
+	return &spb.DeleteActionResponse{}, nil
+}
+
+func (s *Server) GetAction(ctx context.Context, req *spb.GetActionRequest) (*spb.GetActionResponse, error) {
+	return &spb.GetActionResponse{}, nil
+}
+
+func (s *Server) ListActions(ctx context.Context, req *spb.ListActionsRequest) (*spb.ListActionsResponse, error) {
+	return &spb.ListActionsResponse{}, nil
+}
