@@ -1,0 +1,36 @@
+edition="2023";
+package logic;
+option go_package = "github.com/kingofmen/cyoa-exploratory/logic/proto";
+
+message Compare {
+  string key_one = 1;
+  string key_two = 2;
+  enum Op {
+    CMP_GT = 0;
+    CMP_LT = 1;
+    CMP_EQ = 2;
+    CMP_GTE = 3;
+    CMP_LTE = 4;
+    CMP_NEQ = 5;
+    CMP_STREQ = 6;
+    CMP_STRIN = 7;
+  }
+  Op operation = 3;
+}
+
+message Combine {
+  repeated Predicate operands = 1;
+  enum Op {
+    IF_ALL = 0;
+    IF_ANY = 1;
+    IF_NONE = 2;
+  }
+  Op operation = 2;
+}
+
+message Predicate {
+  oneof test {
+    Compare comp = 1;
+    Combine comb = 2;
+  }
+}
