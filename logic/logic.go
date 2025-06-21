@@ -15,7 +15,7 @@ const (
 )
 
 type Lookup interface {
-	GetInt(key string) (int32, error)
+	GetInt(key string) (int64, error)
 	GetStr(key string) (string, error)
 	GetStrArr(key string) ([]string, error)
 	GetScope(key string) Lookup
@@ -104,9 +104,9 @@ func evalCombination(comb *lpb.Combine, lookup Lookup) (bool, error) {
 
 // getInt returns an integer either because key is a literal,
 // or from the lookup table.
-func getInt(key string, lookup Lookup) (int32, error) {
+func getInt(key string, lookup Lookup) (int64, error) {
 	if val, err := strconv.Atoi(key); err == nil {
-		return int32(val), nil
+		return int64(val), nil
 	}
 	scope, skey, has := strings.Cut(key, kScopeSeparator)
 	if has {

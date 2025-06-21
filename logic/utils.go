@@ -7,7 +7,7 @@ import (
 // TestLookup implements Lookup in memory, for easy testing.
 type TestLookup struct {
 	Scoper
-	ints    map[string]int32
+	ints    map[string]int64
 	strs    map[string]string
 	strarrs map[string][]string
 }
@@ -15,13 +15,13 @@ type TestLookup struct {
 // NewTestLookup returns an empty TestLookup.
 func NewTestLookup() *TestLookup {
 	return &TestLookup{
-		ints:    make(map[string]int32),
+		ints:    make(map[string]int64),
 		strs:    make(map[string]string),
 		strarrs: make(map[string][]string),
 	}
 }
 
-func (tl *TestLookup) GetInt(key string) (int32, error) {
+func (tl *TestLookup) GetInt(key string) (int64, error) {
 	if tl == nil {
 		return 0, fmt.Errorf("nil lookup object")
 	}
@@ -54,7 +54,7 @@ func (tl *TestLookup) GetStrArr(key string) ([]string, error) {
 	return val, nil
 }
 
-func (tl *TestLookup) WithInt(key string, val int32) *TestLookup {
+func (tl *TestLookup) WithInt(key string, val int64) *TestLookup {
 	if tl == nil {
 		tl = NewTestLookup()
 	}
