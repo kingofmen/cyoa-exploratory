@@ -23,7 +23,7 @@ message Effect {
 
 message TriggerAction {
   logic.Predicate condition = 1;
-  repeated Effect effect = 2;
+  repeated Effect effects = 2;
 }
 
 message Story {

@@ -18,6 +18,7 @@ func TestHandleAction(t *testing.T) {
 		desc string
 		act  *storypb.Action
 		loc  *storypb.Location
+		str  *storypb.Story
 		game *storypb.Playthrough
 		want *storypb.Playthrough
 	}{
@@ -91,7 +92,7 @@ func TestHandleAction(t *testing.T) {
 
 	for _, cc := range cases {
 		t.Run(cc.desc, func(t *testing.T) {
-			if err := HandleAction(cc.act, cc.loc, cc.game); err != nil {
+			if err := HandleAction(cc.act, cc.loc, cc.game, cc.str); err != nil {
 				t.Errorf("%s: HandleAction() => %v, want nil", cc.desc, err)
 			}
 			if diff := cmp.Diff(cc.game, cc.want, protocmp.Transform()); diff != "" {
@@ -106,6 +107,7 @@ func TestHandleActionSad(t *testing.T) {
 		desc string
 		act  *storypb.Action
 		loc  *storypb.Location
+		str  *storypb.Story
 		game *storypb.Playthrough
 		want string
 	}{
@@ -127,7 +129,7 @@ func TestHandleActionSad(t *testing.T) {
 
 	for _, cc := range cases {
 		t.Run(cc.desc, func(t *testing.T) {
-			err := HandleAction(cc.act, cc.loc, cc.game)
+			err := HandleAction(cc.act, cc.loc, cc.game, cc.str)
 			if got := fmt.Sprintf("%v", err); !strings.Contains(got, cc.want) {
 				t.Errorf("%s: HandleAction() => %v, want %q", cc.desc, err, cc.want)
 			}
