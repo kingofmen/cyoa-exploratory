@@ -61,6 +61,9 @@ func apply(eff *storypb.Effect, game *storypb.Playthrough) {
 		}
 		game.Values[k] += v
 	}
+	if ns := eff.GetNewState(); ns != storypb.RunState_RS_UNKNOWN {
+		game.State = ns.Enum()
+	}
 }
 
 func HandleAction(act *storypb.Action, loc *storypb.Location, game *storypb.Playthrough, story *storypb.Story) error {
