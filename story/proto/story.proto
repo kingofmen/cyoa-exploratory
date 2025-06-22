@@ -4,11 +4,34 @@ edition="2023";
 package story;
 option go_package = "github.com/kingofmen/cyoa-exploratory/story/proto";
 
+import "logic/proto/logic.proto";
+
+enum RunState {
+  RS_UNKNOWN = 0;
+  RS_ACTIVE = 1;
+  RS_HIATUS = 2;
+  RS_COMPLETE = 3;
+}
+
+message Effect {
+  string description = 1;
+  int64 new_location = 2;
+  string tweak_value = 3;
+  int64 tweak_amount = 4;
+  RunState new_state = 5;
+}
+
+message TriggerAction {
+  logic.Predicate condition = 1;
+  repeated Effect effect = 2;
+}
+
 message Story {
   int64 id = 1;
   string title = 2;
   string description = 3;
   int64 start_location_id = 4;
+  repeated TriggerAction events = 5;
 }
 
 message Location {
@@ -22,14 +45,6 @@ message Action {
   int64 id = 1;
   string title = 2;
   string description = 3;
-
-  message Effect {
-    string description = 1;
-    int64 new_location = 2;
-    string tweak_value = 3;
-    int64 tweak_amount = 4;
-  }
-
   repeated Effect effects = 4;
 }
 
@@ -38,4 +53,5 @@ message Playthrough {
   int64 story = 2;
   int64 location = 3;
   map<string, int64> values = 4;
+  RunState state = 5;
 }

@@ -32,8 +32,8 @@ func TestHandleAction(t *testing.T) {
 			desc: "New location",
 			act: &storypb.Action{
 				Id: proto.Int64(1),
-				Effects: []*storypb.Action_Effect{
-					&storypb.Action_Effect{NewLocation: proto.Int64(2)},
+				Effects: []*storypb.Effect{
+					&storypb.Effect{NewLocation: proto.Int64(2)},
 				},
 			},
 			loc:  &storypb.Location{Id: proto.Int64(1), AvailableActions: []int64{1}},
@@ -44,12 +44,12 @@ func TestHandleAction(t *testing.T) {
 			desc: "Tweak values",
 			act: &storypb.Action{
 				Id: proto.Int64(1),
-				Effects: []*storypb.Action_Effect{
-					&storypb.Action_Effect{
+				Effects: []*storypb.Effect{
+					&storypb.Effect{
 						TweakValue:  proto.String("a"),
 						TweakAmount: proto.Int64(1),
 					},
-					&storypb.Action_Effect{
+					&storypb.Effect{
 						TweakValue:  proto.String("b"),
 						TweakAmount: proto.Int64(10),
 					},
@@ -67,8 +67,8 @@ func TestHandleAction(t *testing.T) {
 			desc: "Location and value",
 			act: &storypb.Action{
 				Id: proto.Int64(1),
-				Effects: []*storypb.Action_Effect{
-					&storypb.Action_Effect{
+				Effects: []*storypb.Effect{
+					&storypb.Effect{
 						NewLocation: proto.Int64(2),
 						TweakValue:  proto.String("a"),
 						TweakAmount: proto.Int64(1),
