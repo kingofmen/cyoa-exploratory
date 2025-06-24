@@ -24,6 +24,9 @@ service Cyoa {
   rpc DeleteAction(DeleteActionRequest) returns (DeleteActionResponse) {}
   rpc GetAction(GetActionRequest) returns (GetActionResponse) {}
   rpc ListActions(ListActionsRequest) returns (ListActionsResponse) {}
+
+  rpc CreateGame(CreateGameRequest) returns (CreateGameResponse) {}
+  rpc PlayerAction(PlayerActionRequest) returns (PlayerActionResponse) {}
 };
 
 // Locations.
@@ -106,3 +109,17 @@ message GetActionResponse{}
 
 message ListActionsRequest{}
 message ListActionsResponse{}
+
+message CreateGameRequest{
+  int64 story_id = 1;
+}
+
+message CreateGameResponse{
+  int64 game_id = 1;
+}
+
+message PlayerActionRequest{
+  int64 game_id = 1;
+  int64 action_id = 2;
+}
+message PlayerActionResponse{}

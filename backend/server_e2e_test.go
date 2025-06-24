@@ -147,7 +147,7 @@ func TestStoryE2E(t *testing.T) {
 		t.Errorf("After UpdateStory: %s, want %s, diff %s (%s)", prototext.Format(got), prototext.Format(want), diff, prototext.Format(clresp1))
 	}
 
-	act1 := &storypb.Action{
+	charFighter := &storypb.Action{
 		Title:       proto.String("Fighter"),
 		Description: proto.String("A mighty warrior!"),
 		Triggers: []*storypb.TriggerAction{
@@ -162,7 +162,7 @@ func TestStoryE2E(t *testing.T) {
 			},
 		},
 	}
-	act2 := &storypb.Action{
+	charThief := &storypb.Action{
 		Title:       proto.String("Rogue"),
 		Description: proto.String("A cunning thief!"),
 		Triggers: []*storypb.TriggerAction{
@@ -177,24 +177,67 @@ func TestStoryE2E(t *testing.T) {
 			},
 		},
 	}
-	act3 := &storypb.Action{
+	fightOgre := &storypb.Action{
 		Title:       proto.String("Attack!"),
 		Description: proto.String("Fight the ogre with your sword."),
 	}
-	act4 := &storypb.Action{
+	sneakOgre := &storypb.Action{
 		Title:       proto.String("Slow and sneaky wins the race..."),
 		Description: proto.String("Sneak past the ogre."),
 	}
 
-	actions := []*storypb.Action{act1, act2, act3, act4}
+	actions := []*storypb.Action{charFighter, charThief, fightOgre, sneakOgre}
 	for idx, act := range actions {
-		_, err := srv.CreateAction(ctx, &spb.CreateActionRequest{
+		resp, err := srv.CreateAction(ctx, &spb.CreateActionRequest{
 			Action: act,
 		})
 		if err != nil {
 			t.Fatalf("Could not create action %d: %v", idx, err)
 		}
-
+		actions[idx] = resp.GetAction()
 	}
 
+	cases := []struct {
+		desc    string
+		actions []int64
+	}{
+		{
+			desc:    "Fighter, attack",
+			actions: []int64{charFighter.GetId(), fightOgre.GetId()},
+		},
+		{
+			desc:    "Rogue, attack",
+			actions: []int64{charThief.GetId(), fightOgre.GetId()},
+		},
+		{
+			desc:    "Fighter, sneak",
+			actions: []int64{charFighter.GetId(), sneakOgre.GetId()},
+		},
+		{
+			desc:    "Rogue, sneak",
+			actions: []int64{charThief.GetId(), sneakOgre.GetId()},
+		},
+	}
+
+	for _, cc := range cases {
+		t.Run(cc.desc, func(t *testing.T) {
+			gresp, err := srv.CreateGame(ctx, &spb.CreateGameRequest{
+				StoryId: proto.Int64(stid),
+			})
+			if err != nil {
+				t.Fatalf("%s: Could not create playthrough: %v", cc.desc, err)
+			}
+			gid := gresp.GetGameId()
+			for idx, actid := range cc.actions {
+				_, err := srv.PlayerAction(ctx, &spb.PlayerActionRequest{
+					GameId:   proto.Int64(gid),
+					ActionId: proto.Int64(actid),
+				})
+				if err != nil {
+					t.Errorf("%s: Action %d had unexpected error %v", cc.desc, idx, err)
+					continue
+				}
+			}
+		})
+	}
 }

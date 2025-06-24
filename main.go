@@ -146,6 +146,20 @@ func (fc *FakeClient) ListActions(ctx context.Context, in *spb.ListActionsReques
 	return fc.root.ListActions(ctx, in)
 }
 
+func (fc *FakeClient) CreateGame(ctx context.Context, in *spb.CreateGameRequest, opts ...grpc.CallOption) (*spb.CreateGameResponse, error) {
+	if err := fc.validate(); err != nil {
+		return nil, err
+	}
+	return fc.root.CreateGame(ctx, in)
+}
+
+func (fc *FakeClient) PlayerAction(ctx context.Context, in *spb.PlayerActionRequest, opts ...grpc.CallOption) (*spb.PlayerActionResponse, error) {
+	if err := fc.validate(); err != nil {
+		return nil, err
+	}
+	return fc.root.PlayerAction(ctx, in)
+}
+
 func main() {
 	// Read connection config from environment.
 	user := os.Getenv("CYOA_DB_USER")

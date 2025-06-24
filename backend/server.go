@@ -165,3 +165,11 @@ func (s *Server) GetAction(ctx context.Context, req *spb.GetActionRequest) (*spb
 func (s *Server) ListActions(ctx context.Context, req *spb.ListActionsRequest) (*spb.ListActionsResponse, error) {
 	return &spb.ListActionsResponse{}, nil
 }
+
+func (s *Server) CreateGame(ctx context.Context, req *spb.CreateGameRequest) (*spb.CreateGameResponse, error) {
+	return &spb.CreateGameResponse{}, nil
+}
+
+func (s *Server) PlayerAction(ctx context.Context, req *spb.PlayerActionRequest) (*spb.PlayerActionResponse, error) {
+	return &spb.PlayerActionResponse{}, nil
+}
