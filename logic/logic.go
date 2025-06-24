@@ -245,5 +245,5 @@ func Eval(pred *lpb.Predicate, lookup Lookup) (bool, error) {
 	if comp := pred.GetComp(); comp != nil {
 		return evalComparison(comp, lookup)
 	}
-	return false, nil
+	return true, nil
 }

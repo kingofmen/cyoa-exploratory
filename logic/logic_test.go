@@ -25,6 +25,17 @@ func TestBasics(t *testing.T) {
 		want   bool
 	}{
 		{
+			desc:   "Nil predicate is true",
+			lookup: defaults,
+			want:   true,
+		},
+		{
+			desc:   "Unconditional predicate is true",
+			pred:   &lpb.Predicate{},
+			lookup: defaults,
+			want:   true,
+		},
+		{
 			desc: "Greater than (false)",
 			pred: &lpb.Predicate{
 				Test: &lpb.Predicate_Comp{
