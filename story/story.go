@@ -74,12 +74,24 @@ func HandleAction(act *storypb.Action, loc *storypb.Location, game *storypb.Play
 		return fmt.Errorf("action %d (%s) not allowed in location %d (%s)", act.GetId(), act.GetTitle(), loc.GetId(), loc.GetTitle())
 	}
 
-	// TODO: This should be conditional.
-	for _, eff := range act.GetEffects() {
-		apply(eff, game)
+	state := &gameState{game: game}
+	for idx, tap := range act.GetTriggers() {
+		trigger, err := logic.Eval(tap.GetCondition(), state)
+		if err != nil {
+			log.Printf("Could not evaluate predicate for trigger %d in action %d (%q) of story %d (%q): %v", idx, act.GetId(), act.GetTitle(), story.GetId(), story.GetTitle(), err)
+			continue
+		}
+		if !trigger {
+			continue
+		}
+		for _, effect := range tap.GetEffects() {
+			apply(effect, game)
+		}
+		if tap.GetIsFinal() {
+			break
+		}
 	}
 
-	state := &gameState{game: game}
 	for idx, tap := range story.GetEvents() {
 		trigger, err := logic.Eval(tap.GetCondition(), state)
 		if err != nil {
@@ -92,6 +104,9 @@ func HandleAction(act *storypb.Action, loc *storypb.Location, game *storypb.Play
 		}
 		for _, effect := range tap.GetEffects() {
 			apply(effect, game)
+		}
+		if tap.GetIsFinal() {
+			break
 		}
 	}
 

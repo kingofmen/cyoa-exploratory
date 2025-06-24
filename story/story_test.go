@@ -34,8 +34,12 @@ func TestHandleAction(t *testing.T) {
 			desc: "New location",
 			act: &storypb.Action{
 				Id: proto.Int64(1),
-				Effects: []*storypb.Effect{
-					&storypb.Effect{NewLocation: proto.Int64(2)},
+				Triggers: []*storypb.TriggerAction{
+					&storypb.TriggerAction{
+						Effects: []*storypb.Effect{
+							&storypb.Effect{NewLocation: proto.Int64(2)},
+						},
+					},
 				},
 			},
 			loc:  &storypb.Location{Id: proto.Int64(1), AvailableActions: []int64{1}},
@@ -43,17 +47,165 @@ func TestHandleAction(t *testing.T) {
 			want: &storypb.Playthrough{Id: proto.Int64(1), Location: proto.Int64(2)},
 		},
 		{
+			desc: "Conditional effect (yes)",
+			act: &storypb.Action{
+				Id: proto.Int64(1),
+				Triggers: []*storypb.TriggerAction{
+					&storypb.TriggerAction{
+						Condition: &lpb.Predicate{
+							Test: &lpb.Predicate_Comp{
+								Comp: &lpb.Compare{
+									KeyOne:    proto.String("strength"),
+									KeyTwo:    proto.String("1"),
+									Operation: lpb.Compare_CMP_GT.Enum(),
+								},
+							},
+						},
+						Effects: []*storypb.Effect{
+							&storypb.Effect{NewLocation: proto.Int64(2)},
+						},
+					},
+				},
+			},
+			loc: &storypb.Location{Id: proto.Int64(1), AvailableActions: []int64{1}},
+			game: &storypb.Playthrough{
+				Id:       proto.Int64(1),
+				Location: proto.Int64(1),
+				Values:   map[string]int64{"strength": 10},
+			},
+			want: &storypb.Playthrough{
+				Id:       proto.Int64(1),
+				Location: proto.Int64(2),
+				Values:   map[string]int64{"strength": 10},
+			},
+		},
+		{
+			desc: "Conditional effect (no)",
+			act: &storypb.Action{
+				Id: proto.Int64(1),
+				Triggers: []*storypb.TriggerAction{
+					&storypb.TriggerAction{
+						Condition: &lpb.Predicate{
+							Test: &lpb.Predicate_Comp{
+								Comp: &lpb.Compare{
+									KeyOne:    proto.String("strength"),
+									KeyTwo:    proto.String("1"),
+									Operation: lpb.Compare_CMP_GT.Enum(),
+								},
+							},
+						},
+						Effects: []*storypb.Effect{
+							&storypb.Effect{NewLocation: proto.Int64(2)},
+						},
+					},
+				},
+			},
+			loc: &storypb.Location{Id: proto.Int64(1), AvailableActions: []int64{1}},
+			game: &storypb.Playthrough{
+				Id:       proto.Int64(1),
+				Location: proto.Int64(1),
+			},
+			want: &storypb.Playthrough{
+				Id:       proto.Int64(1),
+				Location: proto.Int64(1),
+			},
+		},
+		{
+			desc: "Final effect (yes)",
+			act: &storypb.Action{
+				Id: proto.Int64(1),
+				Triggers: []*storypb.TriggerAction{
+					&storypb.TriggerAction{
+						Condition: &lpb.Predicate{
+							Test: &lpb.Predicate_Comp{
+								Comp: &lpb.Compare{
+									KeyOne:    proto.String("strength"),
+									KeyTwo:    proto.String("1"),
+									Operation: lpb.Compare_CMP_GT.Enum(),
+								},
+							},
+						},
+						Effects: []*storypb.Effect{
+							&storypb.Effect{NewLocation: proto.Int64(2)},
+						},
+						IsFinal: proto.Bool(true),
+					},
+					&storypb.TriggerAction{
+						Effects: []*storypb.Effect{
+							&storypb.Effect{NewLocation: proto.Int64(3)},
+						},
+						IsFinal: proto.Bool(true),
+					},
+				},
+			},
+			loc: &storypb.Location{Id: proto.Int64(1), AvailableActions: []int64{1}},
+			game: &storypb.Playthrough{
+				Id:       proto.Int64(1),
+				Location: proto.Int64(1),
+				Values:   map[string]int64{"strength": 10},
+			},
+			want: &storypb.Playthrough{
+				Id:       proto.Int64(1),
+				Location: proto.Int64(2),
+				Values:   map[string]int64{"strength": 10},
+			},
+		},
+		{
+			desc: "Final effect (no)",
+			act: &storypb.Action{
+				Id: proto.Int64(1),
+				Triggers: []*storypb.TriggerAction{
+					&storypb.TriggerAction{
+						Condition: &lpb.Predicate{
+							Test: &lpb.Predicate_Comp{
+								Comp: &lpb.Compare{
+									KeyOne:    proto.String("strength"),
+									KeyTwo:    proto.String("1"),
+									Operation: lpb.Compare_CMP_GT.Enum(),
+								},
+							},
+						},
+						Effects: []*storypb.Effect{
+							&storypb.Effect{NewLocation: proto.Int64(2)},
+						},
+						IsFinal: proto.Bool(true),
+					},
+					&storypb.TriggerAction{
+						Effects: []*storypb.Effect{
+							&storypb.Effect{NewLocation: proto.Int64(3)},
+						},
+						IsFinal: proto.Bool(true),
+					},
+				},
+			},
+			loc: &storypb.Location{Id: proto.Int64(1), AvailableActions: []int64{1}},
+			game: &storypb.Playthrough{
+				Id:       proto.Int64(1),
+				Location: proto.Int64(1),
+				Values:   map[string]int64{"strength": 1},
+			},
+			want: &storypb.Playthrough{
+				Id:       proto.Int64(1),
+				Location: proto.Int64(3),
+				Values:   map[string]int64{"strength": 1},
+			},
+		},
+		{
 			desc: "Tweak values",
 			act: &storypb.Action{
 				Id: proto.Int64(1),
-				Effects: []*storypb.Effect{
-					&storypb.Effect{
-						TweakValue:  proto.String("a"),
-						TweakAmount: proto.Int64(1),
-					},
-					&storypb.Effect{
-						TweakValue:  proto.String("b"),
-						TweakAmount: proto.Int64(10),
+				Triggers: []*storypb.TriggerAction{
+					&storypb.TriggerAction{
+						Effects: []*storypb.Effect{
+							&storypb.Effect{
+								TweakValue:  proto.String("a"),
+								TweakAmount: proto.Int64(1),
+							},
+							&storypb.Effect{
+								TweakValue:  proto.String("b"),
+								TweakAmount: proto.Int64(10),
+							},
+						},
 					},
 				},
 			},
@@ -69,11 +221,15 @@ func TestHandleAction(t *testing.T) {
 			desc: "Location and value",
 			act: &storypb.Action{
 				Id: proto.Int64(1),
-				Effects: []*storypb.Effect{
-					&storypb.Effect{
-						NewLocation: proto.Int64(2),
-						TweakValue:  proto.String("a"),
-						TweakAmount: proto.Int64(1),
+				Triggers: []*storypb.TriggerAction{
+					&storypb.TriggerAction{
+						Effects: []*storypb.Effect{
+							&storypb.Effect{
+								NewLocation: proto.Int64(2),
+								TweakValue:  proto.String("a"),
+								TweakAmount: proto.Int64(1),
+							},
+						},
 					},
 				},
 			},
@@ -93,10 +249,14 @@ func TestHandleAction(t *testing.T) {
 			desc: "Story trigger",
 			act: &storypb.Action{
 				Id: proto.Int64(1),
-				Effects: []*storypb.Effect{
-					&storypb.Effect{
-						TweakValue:  proto.String("hit_points"),
-						TweakAmount: proto.Int64(-1),
+				Triggers: []*storypb.TriggerAction{
+					&storypb.TriggerAction{
+						Effects: []*storypb.Effect{
+							&storypb.Effect{
+								TweakValue:  proto.String("hit_points"),
+								TweakAmount: proto.Int64(-1),
+							},
+						},
 					},
 				},
 			},

@@ -150,22 +150,30 @@ func TestStoryE2E(t *testing.T) {
 	act1 := &storypb.Action{
 		Title:       proto.String("Fighter"),
 		Description: proto.String("A mighty warrior!"),
-		Effects: []*storypb.Effect{
-			&storypb.Effect{
-				NewLocation: proto.Int64(loc2id),
-				TweakValue:  proto.String("Strength"),
-				TweakAmount: proto.Int64(5),
+		Triggers: []*storypb.TriggerAction{
+			&storypb.TriggerAction{
+				Effects: []*storypb.Effect{
+					&storypb.Effect{
+						NewLocation: proto.Int64(loc2id),
+						TweakValue:  proto.String("Strength"),
+						TweakAmount: proto.Int64(5),
+					},
+				},
 			},
 		},
 	}
 	act2 := &storypb.Action{
 		Title:       proto.String("Rogue"),
 		Description: proto.String("A cunning thief!"),
-		Effects: []*storypb.Effect{
-			&storypb.Effect{
-				NewLocation: proto.Int64(loc2id),
-				TweakValue:  proto.String("Dexterity"),
-				TweakAmount: proto.Int64(5),
+		Triggers: []*storypb.TriggerAction{
+			&storypb.TriggerAction{
+				Effects: []*storypb.Effect{
+					&storypb.Effect{
+						NewLocation: proto.Int64(loc2id),
+						TweakValue:  proto.String("Dexterity"),
+						TweakAmount: proto.Int64(5),
+					},
+				},
 			},
 		},
 	}

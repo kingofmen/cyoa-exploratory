@@ -24,6 +24,9 @@ message Effect {
 message TriggerAction {
   logic.Predicate condition = 1;
   repeated Effect effects = 2;
+  // If set, triggering this action will prevent further
+  // trigger evaluation in its scope.
+  bool is_final = 3;
 }
 
 message Story {
@@ -45,7 +48,7 @@ message Action {
   int64 id = 1;
   string title = 2;
   string description = 3;
-  repeated Effect effects = 4;
+  repeated TriggerAction triggers = 4;
 }
 
 message Playthrough {
