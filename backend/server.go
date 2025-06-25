@@ -167,7 +167,15 @@ func (s *Server) ListActions(ctx context.Context, req *spb.ListActionsRequest) (
 }
 
 func (s *Server) CreateGame(ctx context.Context, req *spb.CreateGameRequest) (*spb.CreateGameResponse, error) {
-	return &spb.CreateGameResponse{}, nil
+	sid := req.GetStoryId()
+	if sid < 1 {
+		return nil, fmt.Errorf("CreateGame called with bad story ID %d", sid)
+	}
+	resp, err := createGameImpl(ctx, s.db, sid)
+	if err != nil {
+		return nil, fmt.Errorf("CreateGame error: %w", err)
+	}
+	return resp, nil
 }
 
 func (s *Server) PlayerAction(ctx context.Context, req *spb.PlayerActionRequest) (*spb.PlayerActionResponse, error) {

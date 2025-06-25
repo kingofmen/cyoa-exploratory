@@ -53,8 +53,8 @@ message Action {
 
 message Playthrough {
   int64 id = 1;
-  int64 story = 2;
-  int64 location = 3;
+  int64 story_id = 2;
+  int64 location_id = 3;
   map<string, int64> values = 4;
   RunState state = 5;
 }

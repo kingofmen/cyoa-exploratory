@@ -219,7 +219,7 @@ func TestStoryE2E(t *testing.T) {
 		},
 	}
 
-	for _, cc := range cases {
+	for cid, cc := range cases {
 		t.Run(cc.desc, func(t *testing.T) {
 			gresp, err := srv.CreateGame(ctx, &spb.CreateGameRequest{
 				StoryId: proto.Int64(stid),
@@ -228,6 +228,9 @@ func TestStoryE2E(t *testing.T) {
 				t.Fatalf("%s: Could not create playthrough: %v", cc.desc, err)
 			}
 			gid := gresp.GetGameId()
+			if expid := int64(cid + 1); gid != expid {
+				t.Errorf("%s: CreateGame() => unexpected game ID %d, want %d", cc.desc, gid, expid)
+			}
 			for idx, actid := range cc.actions {
 				_, err := srv.PlayerAction(ctx, &spb.PlayerActionRequest{
 					GameId:   proto.Int64(gid),

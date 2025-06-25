@@ -178,6 +178,28 @@ func createStoryImpl(ctx context.Context, db *sql.DB, str *storypb.Story) (*spb.
 	}, nil
 }
 
+func loadStory(ctx context.Context, txn *sql.Tx, sid int64) (*storypb.Story, error) {
+	row := txn.QueryRowContext(ctx, `SELECT * FROM Stories AS s WHERE s.id = ?`, sid)
+	var title string
+	var desc sql.NullString
+	var slocid sql.NullInt64
+	if err := row.Scan(&sid, &title, &desc, &slocid); err != nil {
+		return nil, err
+	}
+	ret := &storypb.Story{
+		Id:    proto.Int64(sid),
+		Title: proto.String(title),
+	}
+	if desc.Valid {
+		ret.Description = proto.String(desc.String)
+	}
+	if slocid.Valid {
+		ret.StartLocationId = proto.Int64(slocid.Int64)
+	}
+
+	return ret, nil
+}
+
 func updateStoryImpl(ctx context.Context, db *sql.DB, str *storypb.Story) (*spb.UpdateStoryResponse, error) {
 	txn, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -185,22 +207,28 @@ func updateStoryImpl(ctx context.Context, db *sql.DB, str *storypb.Story) (*spb.
 	}
 
 	sid := str.GetId()
-	row := txn.QueryRowContext(ctx, `SELECT * FROM Stories AS s WHERE s.id = ?`, sid)
-	var slocid sql.NullInt64
-	var title string
-	var desc sql.NullString
-	if err := row.Scan(&sid, &title, &desc, &slocid); err != nil {
+	old, err := loadStory(ctx, txn, sid)
+	if err != nil {
 		return nil, txnError(fmt.Sprintf("could not read story %d", sid), txn, err)
 	}
+
+	title := old.GetTitle()
+	desc := sql.NullString{String: old.GetDescription()}
+	slocid := sql.NullInt64{Int64: old.GetStartLocationId()}
+
 	if nt := str.GetTitle(); len(nt) > 0 {
 		title = nt
 	}
 	if nd := str.GetDescription(); len(nd) > 0 {
 		desc.String = nd
-		desc.Valid = true
 	}
 	if nsl := str.GetStartLocationId(); nsl > 0 {
 		slocid.Int64 = nsl
+	}
+	if len(desc.String) > 0 {
+		desc.Valid = true
+	}
+	if slocid.Int64 > 0 {
 		slocid.Valid = true
 	}
 
@@ -259,5 +287,45 @@ func updateActionImpl(ctx context.Context, db *sql.DB, act *storypb.Action) (*sp
 	// TODO: Implement me.
 	return &spb.UpdateActionResponse{
 		Action: act,
+	}, nil
+}
+
+func createGameImpl(ctx context.Context, db *sql.DB, sid int64) (*spb.CreateGameResponse, error) {
+	txn, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("could not begin transaction: %w", err)
+	}
+
+	str, err := loadStory(ctx, txn, sid)
+	if err != nil {
+		return nil, txnError(fmt.Sprintf("could not find story %d", sid), txn, err)
+	}
+
+	ngame := &storypb.Playthrough{
+		StoryId: proto.Int64(str.GetId()),
+	}
+	if loc := str.GetStartLocationId(); loc > 0 {
+		ngame.LocationId = proto.Int64(loc)
+	}
+	// TODO: Set starting values.
+	ngame.State = storypb.RunState_RS_ACTIVE.Enum()
+	blob, err := proto.Marshal(ngame)
+	if err != nil {
+		return nil, txnError("could not marshal new game", txn, err)
+	}
+	if _, err := txn.ExecContext(ctx, `INSERT INTO Playthroughs (proto) VALUES (?)`, blob); err != nil {
+		return nil, txnError("could not insert into Playthroughs", txn, err)
+	}
+	var gid int64
+	row := txn.QueryRowContext(ctx, `SELECT LAST_INSERT_ID()`)
+	if err := row.Scan(&gid); err != nil {
+		return nil, txnError("could not read back created ID", txn, err)
+	}
+	if err := txn.Commit(); err != nil {
+		return nil, txnError("could not write to database", txn, err)
+	}
+
+	return &spb.CreateGameResponse{
+		GameId: proto.Int64(gid),
 	}, nil
 }
