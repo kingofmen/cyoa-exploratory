@@ -2,7 +2,8 @@
 -- +goose StatementBegin
 CREATE TABLE Playthroughs (
     id SERIAL PRIMARY KEY,
-    proto BLOB
+    proto BLOB,
+    narration MEDIUMTEXT
 );
 -- +goose StatementEnd
 
