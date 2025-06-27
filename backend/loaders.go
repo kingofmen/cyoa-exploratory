@@ -1,0 +1,67 @@
+package handlers
+
+import (
+	"context"
+	"database/sql"
+	"fmt"
+
+	"google.golang.org/protobuf/proto"
+
+	storypb "github.com/kingofmen/cyoa-exploratory/story/proto"
+)
+
+func loadStory(ctx context.Context, txn *sql.Tx, sid int64) (*storypb.Story, error) {
+	row := txn.QueryRowContext(ctx, `SELECT s.id, s.proto FROM Stories AS s WHERE s.id = ?`, sid)
+	blob := []byte{}
+	if err := row.Scan(&sid, &blob); err != nil {
+		return nil, err
+	}
+	str := &storypb.Story{}
+	if err := proto.Unmarshal(blob, str); err != nil {
+		return nil, fmt.Errorf("could not unmarshal story %d: %w", sid, err)
+	}
+	str.Id = proto.Int64(sid)
+	return str, nil
+}
+
+func loadGame(ctx context.Context, txn *sql.Tx, gid int64) (*storypb.Playthrough, error) {
+	row := txn.QueryRowContext(ctx, `SELECT * FROM Playthroughs AS p WHERE p.id = ?`, gid)
+	blob := []byte{}
+	if err := row.Scan(&gid, &blob); err != nil {
+		return nil, err
+	}
+	game := &storypb.Playthrough{}
+	if err := proto.Unmarshal(blob, game); err != nil {
+		return nil, fmt.Errorf("could not unmarshal game %d: %w", gid, err)
+	}
+	game.Id = proto.Int64(gid)
+	return game, nil
+}
+
+func loadAction(ctx context.Context, txn *sql.Tx, aid int64) (*storypb.Action, error) {
+	row := txn.QueryRowContext(ctx, `SELECT * FROM Actions AS a WHERE a.id = ?`, aid)
+	blob := []byte{}
+	if err := row.Scan(&aid, &blob); err != nil {
+		return nil, err
+	}
+	action := &storypb.Action{}
+	if err := proto.Unmarshal(blob, action); err != nil {
+		return nil, fmt.Errorf("could not unmarshal action %d: %w", aid, err)
+	}
+	action.Id = proto.Int64(aid)
+	return action, nil
+}
+
+func loadLocation(ctx context.Context, txn *sql.Tx, lid int64) (*storypb.Location, error) {
+	row := txn.QueryRowContext(ctx, `SELECT l.id, l.proto FROM Locations AS l WHERE l.id = ?`, lid)
+	blob := []byte{}
+	if err := row.Scan(&lid, &blob); err != nil {
+		return nil, err
+	}
+	loc := &storypb.Location{}
+	if err := proto.Unmarshal(blob, loc); err != nil {
+		return nil, fmt.Errorf("could not unmarshal location %d: %w", lid, err)
+	}
+	loc.Id = proto.Int64(lid)
+	return loc, nil
+}
