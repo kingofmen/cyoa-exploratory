@@ -57,5 +57,13 @@
   to a new Location. And having gotten that, I will want to create
   Playthroughs, which reminds me that Stories need to have Characters
   which can be precreated or custom. But first the Actions.
+\item[June 25th] I have been plugging away at actions. Copied my
+  predicate library out of Landnåm, which saves some work. The Landnåm
+  version is on Bazel BUILD files and I cannot be bothered with
+  figuring out how to combine that with regular Go build system, so
+  copying it is, sigh. Then wrote an E2E test which creates a trivial story,
+  two locations and two possible actions in each location, and plays
+  through the four possible combinations. When that has four endings
+  and passes, well! It'll be frontend time!
 \end{itemize}
 

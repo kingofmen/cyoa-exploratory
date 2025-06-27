@@ -3,7 +3,7 @@
 CREATE TABLE Locations (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
-    content MEDIUMTEXT NOT NULL
+    proto BLOB
 );
 -- +goose StatementEnd
 

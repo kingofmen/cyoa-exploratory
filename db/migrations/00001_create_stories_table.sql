@@ -2,7 +2,8 @@
 -- +goose StatementBegin
 CREATE TABLE Stories (
     id SERIAL PRIMARY KEY,
-    title VARCHAR(255) NOT NULL
+    title VARCHAR(255) NOT NULL,
+    proto BLOB
 );
 -- +goose StatementEnd
 

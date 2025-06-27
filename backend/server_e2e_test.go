@@ -86,17 +86,19 @@ func TestStoryE2E(t *testing.T) {
 
 	clresp1, err := srv.CreateLocation(ctx, &spb.CreateLocationRequest{
 		Location: &storypb.Location{
-			Title:   proto.String("Choose Character"),
-			Content: proto.String("Choose which character to play as."),
+			Title:            proto.String("Choose Character"),
+			Content:          proto.String("Choose which character to play as."),
+			AvailableActions: []int64{1, 2},
 		},
 	})
 	if err != nil {
 		t.Fatalf("CreateLocation(1) => %v, want nil", err)
 	}
 	exploc := &storypb.Location{
-		Id:      proto.Int64(1),
-		Title:   proto.String("Choose Character"),
-		Content: proto.String("Choose which character to play as."),
+		Id:               proto.Int64(1),
+		Title:            proto.String("Choose Character"),
+		Content:          proto.String("Choose which character to play as."),
+		AvailableActions: []int64{1, 2},
 	}
 	if diff := cmp.Diff(clresp1.GetLocation(), exploc, protocmp.Transform()); diff != "" {
 		t.Errorf("After CreateLocation(1): %s, want %s, diff %s", prototext.Format(clresp1.GetLocation()), prototext.Format(exploc), diff)
@@ -105,8 +107,9 @@ func TestStoryE2E(t *testing.T) {
 	loc1id := clresp1.GetLocation().GetId()
 	clresp2, err := srv.CreateLocation(ctx, &spb.CreateLocationRequest{
 		Location: &storypb.Location{
-			Title:   proto.String("Ogre Encounter"),
-			Content: proto.String("Either fight the ogre or attempt to sneak past it."),
+			Title:            proto.String("Ogre Encounter"),
+			Content:          proto.String("Either fight the ogre or attempt to sneak past it."),
+			AvailableActions: []int64{3, 4},
 		},
 	})
 	if err != nil {
@@ -115,9 +118,10 @@ func TestStoryE2E(t *testing.T) {
 	loc2id := clresp2.GetLocation().GetId()
 
 	exploc = &storypb.Location{
-		Id:      proto.Int64(2),
-		Title:   proto.String("Ogre Encounter"),
-		Content: proto.String("Either fight the ogre or attempt to sneak past it."),
+		Id:               proto.Int64(2),
+		Title:            proto.String("Ogre Encounter"),
+		Content:          proto.String("Either fight the ogre or attempt to sneak past it."),
+		AvailableActions: []int64{3, 4},
 	}
 	if diff := cmp.Diff(clresp2.GetLocation(), exploc, protocmp.Transform()); diff != "" {
 		t.Errorf("After CreateLocation(2): %s, want %s, diff %s", prototext.Format(clresp2.GetLocation()), prototext.Format(exploc), diff)
@@ -154,9 +158,9 @@ func TestStoryE2E(t *testing.T) {
 			&storypb.TriggerAction{
 				Effects: []*storypb.Effect{
 					&storypb.Effect{
-						NewLocation: proto.Int64(loc2id),
-						TweakValue:  proto.String("Strength"),
-						TweakAmount: proto.Int64(5),
+						NewLocationId: proto.Int64(loc2id),
+						TweakValue:    proto.String("Strength"),
+						TweakAmount:   proto.Int64(5),
 					},
 				},
 			},
@@ -169,9 +173,9 @@ func TestStoryE2E(t *testing.T) {
 			&storypb.TriggerAction{
 				Effects: []*storypb.Effect{
 					&storypb.Effect{
-						NewLocation: proto.Int64(loc2id),
-						TweakValue:  proto.String("Dexterity"),
-						TweakAmount: proto.Int64(5),
+						NewLocationId: proto.Int64(loc2id),
+						TweakValue:    proto.String("Dexterity"),
+						TweakAmount:   proto.Int64(5),
 					},
 				},
 			},

@@ -179,5 +179,16 @@ func (s *Server) CreateGame(ctx context.Context, req *spb.CreateGameRequest) (*s
 }
 
 func (s *Server) PlayerAction(ctx context.Context, req *spb.PlayerActionRequest) (*spb.PlayerActionResponse, error) {
-	return &spb.PlayerActionResponse{}, nil
+	gid, aid := req.GetGameId(), req.GetActionId()
+	if gid < 1 {
+		return nil, fmt.Errorf("PlayerAction called with bad game ID %d", gid)
+	}
+	if aid < 1 {
+		return nil, fmt.Errorf("PlayerAction called with bad action ID %d", gid)
+	}
+	resp, err := playerActionImpl(ctx, s.db, gid, aid)
+	if err != nil {
+		return nil, fmt.Errorf("PlayerAction error: %w", err)
+	}
+	return resp, nil
 }

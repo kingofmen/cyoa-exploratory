@@ -15,7 +15,7 @@ enum RunState {
 
 message Effect {
   string description = 1;
-  int64 new_location = 2;
+  int64 new_location_id = 2;
   string tweak_value = 3;
   int64 tweak_amount = 4;
   RunState new_state = 5;

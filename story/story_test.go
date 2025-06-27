@@ -27,8 +27,8 @@ func TestHandleAction(t *testing.T) {
 			desc: "No-op",
 			act:  &storypb.Action{Id: proto.Int64(1)},
 			loc:  &storypb.Location{Id: proto.Int64(1), AvailableActions: []int64{1}},
-			game: &storypb.Playthrough{Id: proto.Int64(1), Location: proto.Int64(1)},
-			want: &storypb.Playthrough{Id: proto.Int64(1), Location: proto.Int64(1)},
+			game: &storypb.Playthrough{Id: proto.Int64(1), LocationId: proto.Int64(1)},
+			want: &storypb.Playthrough{Id: proto.Int64(1), LocationId: proto.Int64(1)},
 		},
 		{
 			desc: "New location",
@@ -37,14 +37,14 @@ func TestHandleAction(t *testing.T) {
 				Triggers: []*storypb.TriggerAction{
 					&storypb.TriggerAction{
 						Effects: []*storypb.Effect{
-							&storypb.Effect{NewLocation: proto.Int64(2)},
+							&storypb.Effect{NewLocationId: proto.Int64(2)},
 						},
 					},
 				},
 			},
 			loc:  &storypb.Location{Id: proto.Int64(1), AvailableActions: []int64{1}},
-			game: &storypb.Playthrough{Id: proto.Int64(1), Location: proto.Int64(1)},
-			want: &storypb.Playthrough{Id: proto.Int64(1), Location: proto.Int64(2)},
+			game: &storypb.Playthrough{Id: proto.Int64(1), LocationId: proto.Int64(1)},
+			want: &storypb.Playthrough{Id: proto.Int64(1), LocationId: proto.Int64(2)},
 		},
 		{
 			desc: "Conditional effect (yes)",
@@ -62,21 +62,21 @@ func TestHandleAction(t *testing.T) {
 							},
 						},
 						Effects: []*storypb.Effect{
-							&storypb.Effect{NewLocation: proto.Int64(2)},
+							&storypb.Effect{NewLocationId: proto.Int64(2)},
 						},
 					},
 				},
 			},
 			loc: &storypb.Location{Id: proto.Int64(1), AvailableActions: []int64{1}},
 			game: &storypb.Playthrough{
-				Id:       proto.Int64(1),
-				Location: proto.Int64(1),
-				Values:   map[string]int64{"strength": 10},
+				Id:         proto.Int64(1),
+				LocationId: proto.Int64(1),
+				Values:     map[string]int64{"strength": 10},
 			},
 			want: &storypb.Playthrough{
-				Id:       proto.Int64(1),
-				Location: proto.Int64(2),
-				Values:   map[string]int64{"strength": 10},
+				Id:         proto.Int64(1),
+				LocationId: proto.Int64(2),
+				Values:     map[string]int64{"strength": 10},
 			},
 		},
 		{
@@ -95,19 +95,19 @@ func TestHandleAction(t *testing.T) {
 							},
 						},
 						Effects: []*storypb.Effect{
-							&storypb.Effect{NewLocation: proto.Int64(2)},
+							&storypb.Effect{NewLocationId: proto.Int64(2)},
 						},
 					},
 				},
 			},
 			loc: &storypb.Location{Id: proto.Int64(1), AvailableActions: []int64{1}},
 			game: &storypb.Playthrough{
-				Id:       proto.Int64(1),
-				Location: proto.Int64(1),
+				Id:         proto.Int64(1),
+				LocationId: proto.Int64(1),
 			},
 			want: &storypb.Playthrough{
-				Id:       proto.Int64(1),
-				Location: proto.Int64(1),
+				Id:         proto.Int64(1),
+				LocationId: proto.Int64(1),
 			},
 		},
 		{
@@ -126,13 +126,13 @@ func TestHandleAction(t *testing.T) {
 							},
 						},
 						Effects: []*storypb.Effect{
-							&storypb.Effect{NewLocation: proto.Int64(2)},
+							&storypb.Effect{NewLocationId: proto.Int64(2)},
 						},
 						IsFinal: proto.Bool(true),
 					},
 					&storypb.TriggerAction{
 						Effects: []*storypb.Effect{
-							&storypb.Effect{NewLocation: proto.Int64(3)},
+							&storypb.Effect{NewLocationId: proto.Int64(3)},
 						},
 						IsFinal: proto.Bool(true),
 					},
@@ -140,14 +140,14 @@ func TestHandleAction(t *testing.T) {
 			},
 			loc: &storypb.Location{Id: proto.Int64(1), AvailableActions: []int64{1}},
 			game: &storypb.Playthrough{
-				Id:       proto.Int64(1),
-				Location: proto.Int64(1),
-				Values:   map[string]int64{"strength": 10},
+				Id:         proto.Int64(1),
+				LocationId: proto.Int64(1),
+				Values:     map[string]int64{"strength": 10},
 			},
 			want: &storypb.Playthrough{
-				Id:       proto.Int64(1),
-				Location: proto.Int64(2),
-				Values:   map[string]int64{"strength": 10},
+				Id:         proto.Int64(1),
+				LocationId: proto.Int64(2),
+				Values:     map[string]int64{"strength": 10},
 			},
 		},
 		{
@@ -166,13 +166,13 @@ func TestHandleAction(t *testing.T) {
 							},
 						},
 						Effects: []*storypb.Effect{
-							&storypb.Effect{NewLocation: proto.Int64(2)},
+							&storypb.Effect{NewLocationId: proto.Int64(2)},
 						},
 						IsFinal: proto.Bool(true),
 					},
 					&storypb.TriggerAction{
 						Effects: []*storypb.Effect{
-							&storypb.Effect{NewLocation: proto.Int64(3)},
+							&storypb.Effect{NewLocationId: proto.Int64(3)},
 						},
 						IsFinal: proto.Bool(true),
 					},
@@ -180,14 +180,14 @@ func TestHandleAction(t *testing.T) {
 			},
 			loc: &storypb.Location{Id: proto.Int64(1), AvailableActions: []int64{1}},
 			game: &storypb.Playthrough{
-				Id:       proto.Int64(1),
-				Location: proto.Int64(1),
-				Values:   map[string]int64{"strength": 1},
+				Id:         proto.Int64(1),
+				LocationId: proto.Int64(1),
+				Values:     map[string]int64{"strength": 1},
 			},
 			want: &storypb.Playthrough{
-				Id:       proto.Int64(1),
-				Location: proto.Int64(3),
-				Values:   map[string]int64{"strength": 1},
+				Id:         proto.Int64(1),
+				LocationId: proto.Int64(3),
+				Values:     map[string]int64{"strength": 1},
 			},
 		},
 		{
@@ -210,11 +210,11 @@ func TestHandleAction(t *testing.T) {
 				},
 			},
 			loc:  &storypb.Location{Id: proto.Int64(1), AvailableActions: []int64{1}},
-			game: &storypb.Playthrough{Id: proto.Int64(1), Location: proto.Int64(1)},
+			game: &storypb.Playthrough{Id: proto.Int64(1), LocationId: proto.Int64(1)},
 			want: &storypb.Playthrough{
-				Id:       proto.Int64(1),
-				Location: proto.Int64(1),
-				Values:   map[string]int64{"a": 1, "b": 10},
+				Id:         proto.Int64(1),
+				LocationId: proto.Int64(1),
+				Values:     map[string]int64{"a": 1, "b": 10},
 			},
 		},
 		{
@@ -225,9 +225,9 @@ func TestHandleAction(t *testing.T) {
 					&storypb.TriggerAction{
 						Effects: []*storypb.Effect{
 							&storypb.Effect{
-								NewLocation: proto.Int64(2),
-								TweakValue:  proto.String("a"),
-								TweakAmount: proto.Int64(1),
+								NewLocationId: proto.Int64(2),
+								TweakValue:    proto.String("a"),
+								TweakAmount:   proto.Int64(1),
 							},
 						},
 					},
@@ -235,14 +235,14 @@ func TestHandleAction(t *testing.T) {
 			},
 			loc: &storypb.Location{Id: proto.Int64(1), AvailableActions: []int64{1}},
 			game: &storypb.Playthrough{
-				Id:       proto.Int64(1),
-				Location: proto.Int64(1),
-				Values:   map[string]int64{"a": 1, "b": 10},
+				Id:         proto.Int64(1),
+				LocationId: proto.Int64(1),
+				Values:     map[string]int64{"a": 1, "b": 10},
 			},
 			want: &storypb.Playthrough{
-				Id:       proto.Int64(1),
-				Location: proto.Int64(2),
-				Values:   map[string]int64{"a": 2, "b": 10},
+				Id:         proto.Int64(1),
+				LocationId: proto.Int64(2),
+				Values:     map[string]int64{"a": 2, "b": 10},
 			},
 		},
 		{
@@ -275,10 +275,10 @@ func TestHandleAction(t *testing.T) {
 						},
 						Effects: []*storypb.Effect{
 							&storypb.Effect{
-								NewLocation: proto.Int64(5),
-								TweakValue:  proto.String("deadness"),
-								TweakAmount: proto.Int64(100),
-								NewState:    storypb.RunState_RS_COMPLETE.Enum(),
+								NewLocationId: proto.Int64(5),
+								TweakValue:    proto.String("deadness"),
+								TweakAmount:   proto.Int64(100),
+								NewState:      storypb.RunState_RS_COMPLETE.Enum(),
 							},
 						},
 					},
@@ -286,13 +286,13 @@ func TestHandleAction(t *testing.T) {
 			},
 			loc: &storypb.Location{Id: proto.Int64(1), AvailableActions: []int64{1}},
 			game: &storypb.Playthrough{
-				Id:       proto.Int64(1),
-				Location: proto.Int64(1),
-				Values:   map[string]int64{"hit_points": 1},
+				Id:         proto.Int64(1),
+				LocationId: proto.Int64(1),
+				Values:     map[string]int64{"hit_points": 1},
 			},
 			want: &storypb.Playthrough{
-				Id:       proto.Int64(1),
-				Location: proto.Int64(5),
+				Id:         proto.Int64(1),
+				LocationId: proto.Int64(5),
 				Values: map[string]int64{
 					"hit_points": 0,
 					"deadness":   100,
@@ -327,14 +327,14 @@ func TestHandleActionSad(t *testing.T) {
 			desc: "Bad ID",
 			act:  &storypb.Action{Id: proto.Int64(1)},
 			loc:  &storypb.Location{Id: proto.Int64(1), AvailableActions: []int64{1}},
-			game: &storypb.Playthrough{Id: proto.Int64(1), Location: proto.Int64(2)},
+			game: &storypb.Playthrough{Id: proto.Int64(1), LocationId: proto.Int64(2)},
 			want: "when current location is 2",
 		},
 		{
 			desc: "Disallowed action",
 			act:  &storypb.Action{Id: proto.Int64(1)},
 			loc:  &storypb.Location{Id: proto.Int64(1), AvailableActions: []int64{10}},
-			game: &storypb.Playthrough{Id: proto.Int64(1), Location: proto.Int64(1)},
+			game: &storypb.Playthrough{Id: proto.Int64(1), LocationId: proto.Int64(1)},
 			want: "not allowed in location 1",
 		},
 	}

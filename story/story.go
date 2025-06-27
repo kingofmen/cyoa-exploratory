@@ -52,8 +52,8 @@ func allowed(act *storypb.Action, loc *storypb.Location) bool {
 
 // apply sets the new state of the playthrough according to the effect.
 func apply(eff *storypb.Effect, game *storypb.Playthrough) {
-	if nl := eff.GetNewLocation(); nl != 0 {
-		game.Location = proto.Int64(nl)
+	if nl := eff.GetNewLocationId(); nl != 0 {
+		game.LocationId = proto.Int64(nl)
 	}
 	if k, v := eff.GetTweakValue(), eff.GetTweakAmount(); len(k) > 0 && v != 0 {
 		if len(game.Values) == 0 {
@@ -67,8 +67,8 @@ func apply(eff *storypb.Effect, game *storypb.Playthrough) {
 }
 
 func HandleAction(act *storypb.Action, loc *storypb.Location, game *storypb.Playthrough, story *storypb.Story) error {
-	if loc.GetId() != game.GetLocation() {
-		return fmt.Errorf("cannot apply action %d (%s) to location %d (%s) when current location is %d", act.GetId(), act.GetTitle(), loc.GetId(), loc.GetTitle(), game.GetLocation())
+	if loc.GetId() != game.GetLocationId() {
+		return fmt.Errorf("cannot apply action %d (%s) to location %d (%s) when current location is %d", act.GetId(), act.GetTitle(), loc.GetId(), loc.GetTitle(), game.GetLocationId())
 	}
 	if !allowed(act, loc) {
 		return fmt.Errorf("action %d (%s) not allowed in location %d (%s)", act.GetId(), act.GetTitle(), loc.GetId(), loc.GetTitle())

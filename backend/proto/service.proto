@@ -122,4 +122,6 @@ message PlayerActionRequest{
   int64 game_id = 1;
   int64 action_id = 2;
 }
-message PlayerActionResponse{}
+message PlayerActionResponse{
+  story.Playthrough game_state = 1;
+}
