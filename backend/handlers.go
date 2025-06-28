@@ -191,6 +191,9 @@ func updateStoryImpl(ctx context.Context, db *sql.DB, str *storypb.Story) (*spb.
 	if nsl := str.GetStartLocationId(); nsl < 1 {
 		str.StartLocationId = proto.Int64(old.GetStartLocationId())
 	}
+	if evts := str.GetEvents(); len(evts) == 0 {
+		str.Events = old.GetEvents()
+	}
 
 	blob, err := proto.Marshal(str)
 	if err != nil {
