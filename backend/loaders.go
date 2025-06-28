@@ -27,7 +27,8 @@ func loadStory(ctx context.Context, txn *sql.Tx, sid int64) (*storypb.Story, err
 func loadGame(ctx context.Context, txn *sql.Tx, gid int64) (*storypb.Playthrough, error) {
 	row := txn.QueryRowContext(ctx, `SELECT * FROM Playthroughs AS p WHERE p.id = ?`, gid)
 	blob := []byte{}
-	if err := row.Scan(&gid, &blob); err != nil {
+	var text sql.NullString
+	if err := row.Scan(&gid, &blob, &text); err != nil {
 		return nil, err
 	}
 	game := &storypb.Playthrough{}
