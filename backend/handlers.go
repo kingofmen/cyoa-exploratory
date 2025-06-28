@@ -287,7 +287,9 @@ func createGameImpl(ctx context.Context, db *sql.DB, sid int64) (*spb.CreateGame
 	}, nil
 }
 
-func playerActionImpl(ctx context.Context, db *sql.DB, gid, aid int64) (*spb.PlayerActionResponse, error) {
+// validateAction loads the action, location, game, and story for a player input.
+// It is read-only.
+func validateAction(ctx context.Context, db *sql.DB, gid, aid int64) (*storypb.GameEvent, error) {
 	txn, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not begin transaction: %w", err)
@@ -310,9 +312,26 @@ func playerActionImpl(ctx context.Context, db *sql.DB, gid, aid int64) (*spb.Pla
 	if err != nil {
 		return nil, txnError(fmt.Sprintf("could not find location %d for playthrough %d of story %d", lid, gid, sid), txn, err)
 	}
-	if err := story.HandleAction(act, loc, game, str); err != nil {
-		return nil, txnError(fmt.Sprintf("could not apply action %d in location %d for playthrough %d of story %d", aid, lid, gid, sid), txn, err)
+	if err := txn.Commit(); err != nil {
+		return nil, txnError("could not write to database", txn, err)
 	}
+
+	return &storypb.GameEvent{
+		Action:       act,
+		Location:     loc,
+		GameSnapshot: game,
+		Story:        str,
+	}, nil
+}
+
+func playerActionImpl(ctx context.Context, db *sql.DB, event *storypb.GameEvent) (*spb.PlayerActionResponse, error) {
+	game := proto.Clone(event.GetGameSnapshot()).(*storypb.Playthrough)
+	action, location, str := event.GetAction(), event.GetLocation(), event.GetStory()
+	aid, lid, gid, sid := action.GetId(), location.GetId(), game.GetId(), str.GetId()
+	if err := story.HandleAction(action, location, game, str); err != nil {
+		return nil, fmt.Errorf("could not apply action %d in location %d for playthrough %d of story %d: %w", aid, lid, gid, sid, err)
+	}
+	txn, err := db.BeginTx(ctx, nil)
 	blob, err := proto.Marshal(game)
 	if err != nil {
 		return nil, txnError(fmt.Sprintf("could not marshal updated playthrough %d of story %d after action %d", gid, sid, aid), txn, err)

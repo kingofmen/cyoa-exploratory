@@ -186,9 +186,16 @@ func (s *Server) PlayerAction(ctx context.Context, req *spb.PlayerActionRequest)
 	if aid < 1 {
 		return nil, fmt.Errorf("PlayerAction called with bad action ID %d", gid)
 	}
-	resp, err := playerActionImpl(ctx, s.db, gid, aid)
+
+	event, err := validateAction(ctx, s.db, gid, aid)
+	if err != nil {
+		return nil, fmt.Errorf("could not validate action %d in game %d: %w", aid, gid, err)
+	}
+
+	resp, err := playerActionImpl(ctx, s.db, event)
 	if err != nil {
 		return nil, fmt.Errorf("PlayerAction error: %w", err)
 	}
+
 	return resp, nil
 }

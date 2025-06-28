@@ -58,3 +58,12 @@ message Playthrough {
   map<string, int64> values = 4;
   RunState state = 5;
 }
+
+// GameEvent holds a specific action, the location it occurred in,
+// the game state at that moment, and the story information.
+message GameEvent {
+  Action action = 1;
+  Location location = 2;
+  Playthrough game_snapshot = 3;
+  Story story = 4;
+}

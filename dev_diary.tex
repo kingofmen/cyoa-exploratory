@@ -65,5 +65,17 @@
   two locations and two possible actions in each location, and plays
   through the four possible combinations. When that has four endings
   and passes, well! It'll be frontend time!
+\item[June 27th] Ah hah I just realised the problem here. I have a
+  backend which handles game mechanics; I want to add a separate,
+  pluggable service which adds narrative. So, what if the actions pass
+  through the mechanical backend but fail out on the narrative? Could
+  in principle gate the transaction commit on it, but seems
+  fraught. Think the solution must be: Separate committing ``the
+  player did this'' from committing ``these were the effects''. Hum!
+
+  No actually this is not so difficult, just separate out read-only
+  loading of state, hypothetical application of action and getting of
+  narrative, and actual writing back to DB into separate bits. That
+  way you're never left in an inconsistent state.
 \end{itemize}
 
