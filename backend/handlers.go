@@ -323,21 +323,19 @@ func validateAction(ctx context.Context, db *sql.DB, gid, aid int64) (*storypb.G
 	}, nil
 }
 
-func writeAction(ctx context.Context, db *sql.DB, event *storypb.GameEvent) (*spb.PlayerActionResponse, error) {
+func writeAction(ctx context.Context, db *sql.DB, event *storypb.GameEvent) error {
 	game := event.GetGameSnapshot()
 	aid, gid, sid := event.GetAction().GetId(), game.GetId(), event.GetStory().GetId()
 	txn, err := db.BeginTx(ctx, nil)
 	blob, err := proto.Marshal(game)
 	if err != nil {
-		return nil, txnError(fmt.Sprintf("could not marshal updated playthrough %d of story %d after action %d", gid, sid, aid), txn, err)
+		return txnError(fmt.Sprintf("could not marshal updated playthrough %d of story %d after action %d", gid, sid, aid), txn, err)
 	}
 	if _, err := txn.ExecContext(ctx, `UPDATE Playthroughs SET proto = ? WHERE id = ?`, blob, gid); err != nil {
-		return nil, txnError(fmt.Sprintf("could not update playthrough %d of story %d after action %d", gid, sid, aid), txn, err)
+		return txnError(fmt.Sprintf("could not update playthrough %d of story %d after action %d", gid, sid, aid), txn, err)
 	}
 	if err := txn.Commit(); err != nil {
-		return nil, txnError("could not write to database", txn, err)
+		return txnError("could not write to database", txn, err)
 	}
-	return &spb.PlayerActionResponse{
-		GameState: game,
-	}, nil
+	return nil
 }

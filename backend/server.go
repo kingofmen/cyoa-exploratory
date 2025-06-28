@@ -6,18 +6,22 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/kingofmen/cyoa-exploratory/narrate"
 	"github.com/kingofmen/cyoa-exploratory/story"
+	"google.golang.org/protobuf/proto"
 
 	spb "github.com/kingofmen/cyoa-exploratory/backend/proto"
 )
 
 type Server struct {
-	db *sql.DB
+	db       *sql.DB
+	narrator narrate.Narrator
 }
 
 func New(db *sql.DB) *Server {
 	return &Server{
-		db: db,
+		db:       db,
+		narrator: narrate.DefaultNarrator(),
 	}
 }
 
@@ -199,11 +203,18 @@ func (s *Server) PlayerAction(ctx context.Context, req *spb.PlayerActionRequest)
 		return nil, fmt.Errorf("could not apply action %d in game %d: %w", aid, gid, err)
 	}
 
-	event.GameSnapshot = updated
-	resp, err := writeAction(ctx, s.db, event)
+	content, err := s.narrator.Event(ctx, event)
 	if err != nil {
+		return nil, fmt.Errorf("could not narrate action %d in game %d: %w", aid, gid, err)
+	}
+
+	event.GameSnapshot = updated
+	if err := writeAction(ctx, s.db, event); err != nil {
 		return nil, fmt.Errorf("PlayerAction error: %w", err)
 	}
 
-	return resp, nil
+	return &spb.PlayerActionResponse{
+		GameState: updated,
+		Narrative: proto.String(content),
+	}, nil
 }
