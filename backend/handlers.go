@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/kingofmen/cyoa-exploratory/story"
 	"google.golang.org/protobuf/proto"
 
 	spb "github.com/kingofmen/cyoa-exploratory/backend/proto"
@@ -324,13 +323,9 @@ func validateAction(ctx context.Context, db *sql.DB, gid, aid int64) (*storypb.G
 	}, nil
 }
 
-func playerActionImpl(ctx context.Context, db *sql.DB, event *storypb.GameEvent) (*spb.PlayerActionResponse, error) {
-	game := proto.Clone(event.GetGameSnapshot()).(*storypb.Playthrough)
-	action, location, str := event.GetAction(), event.GetLocation(), event.GetStory()
-	aid, lid, gid, sid := action.GetId(), location.GetId(), game.GetId(), str.GetId()
-	if err := story.HandleAction(action, location, game, str); err != nil {
-		return nil, fmt.Errorf("could not apply action %d in location %d for playthrough %d of story %d: %w", aid, lid, gid, sid, err)
-	}
+func writeAction(ctx context.Context, db *sql.DB, event *storypb.GameEvent) (*spb.PlayerActionResponse, error) {
+	game := event.GetGameSnapshot()
+	aid, gid, sid := event.GetAction().GetId(), game.GetId(), event.GetStory().GetId()
 	txn, err := db.BeginTx(ctx, nil)
 	blob, err := proto.Marshal(game)
 	if err != nil {

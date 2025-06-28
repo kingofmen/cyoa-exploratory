@@ -6,6 +6,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/kingofmen/cyoa-exploratory/story"
+
 	spb "github.com/kingofmen/cyoa-exploratory/backend/proto"
 )
 
@@ -192,7 +194,13 @@ func (s *Server) PlayerAction(ctx context.Context, req *spb.PlayerActionRequest)
 		return nil, fmt.Errorf("could not validate action %d in game %d: %w", aid, gid, err)
 	}
 
-	resp, err := playerActionImpl(ctx, s.db, event)
+	updated, err := story.HandleEvent(event)
+	if err != nil {
+		return nil, fmt.Errorf("could not apply action %d in game %d: %w", aid, gid, err)
+	}
+
+	event.GameSnapshot = updated
+	resp, err := writeAction(ctx, s.db, event)
 	if err != nil {
 		return nil, fmt.Errorf("PlayerAction error: %w", err)
 	}

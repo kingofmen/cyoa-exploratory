@@ -66,19 +66,22 @@ func apply(eff *storypb.Effect, game *storypb.Playthrough) {
 	}
 }
 
-func HandleAction(act *storypb.Action, loc *storypb.Location, game *storypb.Playthrough, story *storypb.Story) error {
-	if loc.GetId() != game.GetLocationId() {
-		return fmt.Errorf("cannot apply action %d (%s) to location %d (%s) when current location is %d", act.GetId(), act.GetTitle(), loc.GetId(), loc.GetTitle(), game.GetLocationId())
+func HandleEvent(event *storypb.GameEvent) (*storypb.Playthrough, error) {
+	game := proto.Clone(event.GetGameSnapshot()).(*storypb.Playthrough)
+	act, loc, str := event.GetAction(), event.GetLocation(), event.GetStory()
+	aid, lid, sid := act.GetId(), loc.GetId(), str.GetId()
+	if clid := game.GetLocationId(); lid != clid {
+		return nil, fmt.Errorf("cannot apply action %d (%s) to location %d (%s) when current location is %d", aid, act.GetTitle(), lid, loc.GetTitle(), clid)
 	}
 	if !allowed(act, loc) {
-		return fmt.Errorf("action %d (%s) not allowed in location %d (%s)", act.GetId(), act.GetTitle(), loc.GetId(), loc.GetTitle())
+		return nil, fmt.Errorf("action %d (%s) not allowed in location %d (%s)", aid, act.GetTitle(), lid, loc.GetTitle())
 	}
 
 	state := &gameState{game: game}
 	for idx, tap := range act.GetTriggers() {
 		trigger, err := logic.Eval(tap.GetCondition(), state)
 		if err != nil {
-			log.Printf("Could not evaluate predicate for trigger %d in action %d (%q) of story %d (%q): %v", idx, act.GetId(), act.GetTitle(), story.GetId(), story.GetTitle(), err)
+			log.Printf("Could not evaluate predicate for trigger %d in action %d (%q) of story %d (%q): %v", idx, aid, act.GetTitle(), sid, str.GetTitle(), err)
 			continue
 		}
 		if !trigger {
@@ -92,11 +95,11 @@ func HandleAction(act *storypb.Action, loc *storypb.Location, game *storypb.Play
 		}
 	}
 
-	for idx, tap := range story.GetEvents() {
+	for idx, tap := range str.GetEvents() {
 		trigger, err := logic.Eval(tap.GetCondition(), state)
 		if err != nil {
 			// TODO: Escalate this in some manner.
-			log.Printf("Could not evaluate predicate for TAP %d in story %d (%q): %v", idx, story.GetId(), story.GetTitle(), err)
+			log.Printf("Could not evaluate predicate for TAP %d in story %d (%q): %v", idx, sid, str.GetTitle(), err)
 			continue
 		}
 		if !trigger {
@@ -110,5 +113,5 @@ func HandleAction(act *storypb.Action, loc *storypb.Location, game *storypb.Play
 		}
 	}
 
-	return nil
+	return game, nil
 }
