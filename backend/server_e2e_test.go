@@ -293,9 +293,10 @@ func TestStoryE2E(t *testing.T) {
 	}
 
 	cases := []struct {
-		desc    string
-		actions []int64
-		expect  []*storypb.Playthrough
+		desc      string
+		actions   []int64
+		expect    []*storypb.Playthrough
+		narrative []string
 	}{
 		{
 			desc:    "Fighter, attack",
@@ -311,6 +312,10 @@ func TestStoryE2E(t *testing.T) {
 					Values:     map[string]int64{"Strength": 5, "ogre_defeated": 1},
 					State:      storypb.RunState_RS_COMPLETE.Enum(),
 				},
+			},
+			narrative: []string{
+				"Fighter",
+				"Fighter\nAttack!",
 			},
 		},
 		{
@@ -328,6 +333,10 @@ func TestStoryE2E(t *testing.T) {
 					State:      storypb.RunState_RS_COMPLETE.Enum(),
 				},
 			},
+			narrative: []string{
+				"Rogue",
+				"Rogue\nAttack!",
+			},
 		},
 		{
 			desc:    "Fighter, sneak",
@@ -344,6 +353,10 @@ func TestStoryE2E(t *testing.T) {
 					State:      storypb.RunState_RS_COMPLETE.Enum(),
 				},
 			},
+			narrative: []string{
+				"Fighter",
+				"Fighter\nSlow and sneaky wins the race...",
+			},
 		},
 		{
 			desc:    "Rogue, sneak",
@@ -359,6 +372,10 @@ func TestStoryE2E(t *testing.T) {
 					Values:     map[string]int64{"Dexterity": 5, "ogre_defeated": 1},
 					State:      storypb.RunState_RS_COMPLETE.Enum(),
 				},
+			},
+			narrative: []string{
+				"Rogue",
+				"Rogue\nSlow and sneaky wins the race...",
 			},
 		},
 	}
@@ -388,6 +405,10 @@ func TestStoryE2E(t *testing.T) {
 				got, want := resp.GetGameState(), cc.expect[idx]
 				if diff := cmp.Diff(got, want, protocmp.Transform(), ignore); diff != "" {
 					t.Errorf("%s: PlayerAction(%d) => %s, want %s, diff %s", cc.desc, idx, prototext.Format(got), prototext.Format(want), diff)
+				}
+				gn, wn := resp.GetNarrative(), cc.narrative[idx]
+				if diff := cmp.Diff(gn, wn); diff != "" {
+					t.Errorf("%s: PlayerAction(%d) => narrative %q, want %q, diff %s", cc.desc, idx, gn, wn, diff)
 				}
 			}
 		})

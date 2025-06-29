@@ -293,7 +293,7 @@ func validateAction(ctx context.Context, db *sql.DB, gid, aid int64) (*storypb.G
 	if err != nil {
 		return nil, fmt.Errorf("could not begin transaction: %w", err)
 	}
-	game, err := loadGame(ctx, txn, gid)
+	game, narration, err := loadGame(ctx, txn, gid)
 	if err != nil {
 		return nil, txnError(fmt.Sprintf("could not find game %d", gid), txn, err)
 	}
@@ -320,6 +320,7 @@ func validateAction(ctx context.Context, db *sql.DB, gid, aid int64) (*storypb.G
 		Location:     loc,
 		GameSnapshot: game,
 		Story:        str,
+		Narration:    proto.String(narration),
 	}, nil
 }
 
@@ -331,7 +332,7 @@ func writeAction(ctx context.Context, db *sql.DB, event *storypb.GameEvent) erro
 	if err != nil {
 		return txnError(fmt.Sprintf("could not marshal updated playthrough %d of story %d after action %d", gid, sid, aid), txn, err)
 	}
-	if _, err := txn.ExecContext(ctx, `UPDATE Playthroughs SET proto = ? WHERE id = ?`, blob, gid); err != nil {
+	if _, err := txn.ExecContext(ctx, `UPDATE Playthroughs SET proto = ?, narration = ? WHERE id = ?`, blob, event.GetNarration(), gid); err != nil {
 		return txnError(fmt.Sprintf("could not update playthrough %d of story %d after action %d", gid, sid, aid), txn, err)
 	}
 	if err := txn.Commit(); err != nil {

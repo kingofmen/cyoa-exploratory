@@ -66,4 +66,5 @@ message GameEvent {
   Location location = 2;
   Playthrough game_snapshot = 3;
   Story story = 4;
+  string narration = 5;
 }

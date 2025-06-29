@@ -17,7 +17,7 @@ type Narrator interface {
 type Default struct{}
 
 func (d *Default) Event(_ context.Context, event *storypb.GameEvent) (string, error) {
-	return "placeholder", nil
+	return event.GetAction().GetTitle(), nil
 }
 
 func DefaultNarrator() Narrator {

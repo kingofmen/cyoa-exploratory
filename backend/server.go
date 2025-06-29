@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/kingofmen/cyoa-exploratory/narrate"
 	"github.com/kingofmen/cyoa-exploratory/story"
@@ -209,12 +210,16 @@ func (s *Server) PlayerAction(ctx context.Context, req *spb.PlayerActionRequest)
 	}
 
 	event.GameSnapshot = updated
+	if nn := event.GetNarration(); len(nn) > 0 {
+		content = strings.Join([]string{nn, content}, "\n")
+	}
+	event.Narration = proto.String(content)
 	if err := writeAction(ctx, s.db, event); err != nil {
 		return nil, fmt.Errorf("PlayerAction error: %w", err)
 	}
 
 	return &spb.PlayerActionResponse{
 		GameState: updated,
-		Narrative: proto.String(content),
+		Narrative: proto.String(event.GetNarration()),
 	}, nil
 }

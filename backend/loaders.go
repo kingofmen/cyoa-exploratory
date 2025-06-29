@@ -24,19 +24,19 @@ func loadStory(ctx context.Context, txn *sql.Tx, sid int64) (*storypb.Story, err
 	return str, nil
 }
 
-func loadGame(ctx context.Context, txn *sql.Tx, gid int64) (*storypb.Playthrough, error) {
+func loadGame(ctx context.Context, txn *sql.Tx, gid int64) (*storypb.Playthrough, string, error) {
 	row := txn.QueryRowContext(ctx, `SELECT * FROM Playthroughs AS p WHERE p.id = ?`, gid)
 	blob := []byte{}
 	var text sql.NullString
 	if err := row.Scan(&gid, &blob, &text); err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	game := &storypb.Playthrough{}
 	if err := proto.Unmarshal(blob, game); err != nil {
-		return nil, fmt.Errorf("could not unmarshal game %d: %w", gid, err)
+		return nil, "", fmt.Errorf("could not unmarshal game %d: %w", gid, err)
 	}
 	game.Id = proto.Int64(gid)
-	return game, nil
+	return game, text.String, nil
 }
 
 func loadAction(ctx context.Context, txn *sql.Tx, aid int64) (*storypb.Action, error) {
