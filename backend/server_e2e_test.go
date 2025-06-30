@@ -9,6 +9,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/go-cmp/cmp"
+	"github.com/kingofmen/cyoa-exploratory/narrate"
 	"github.com/pressly/goose/v3"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/mysql"
@@ -70,7 +71,7 @@ func TestMain(m *testing.M) {
 
 func TestStoryE2E(t *testing.T) {
 	ctx := context.Background()
-	srv := New(db)
+	srv := New(db).WithNarrator(narrate.NewDebug())
 	csresp, err := srv.CreateStory(ctx, &spb.CreateStoryRequest{
 		Story: &storypb.Story{
 			Title:       proto.String("E2E test story"),

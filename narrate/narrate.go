@@ -12,14 +12,25 @@ type Narrator interface {
 	Event(context.Context, *storypb.GameEvent) (string, error)
 }
 
-// Default is a very silly placeholder narrator which merely
+// Debug is a narrator suitable for tests, which merely
 // echoes back the title of the provided action.
-type Default struct{}
+type Debug struct{}
 
-func (d *Default) Event(_ context.Context, event *storypb.GameEvent) (string, error) {
+func (d *Debug) Event(_ context.Context, event *storypb.GameEvent) (string, error) {
 	return event.GetAction().GetTitle(), nil
 }
 
-func DefaultNarrator() Narrator {
-	return &Default{}
+// Noop is a placeholder narrator which returns an empty string.
+type Noop struct{}
+
+func (d *Noop) Event(_ context.Context, event *storypb.GameEvent) (string, error) {
+	return "", nil
+}
+
+func NewDebug() Narrator {
+	return &Debug{}
+}
+
+func NewNoop() Narrator {
+	return &Noop{}
 }

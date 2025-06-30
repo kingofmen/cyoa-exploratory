@@ -22,8 +22,16 @@ type Server struct {
 func New(db *sql.DB) *Server {
 	return &Server{
 		db:       db,
-		narrator: narrate.DefaultNarrator(),
+		narrator: narrate.NewNoop(),
 	}
+}
+
+func (s *Server) WithNarrator(n narrate.Narrator) *Server {
+	if s == nil {
+		s = New(nil)
+	}
+	s.narrator = n
+	return s
 }
 
 func (s *Server) CreateLocation(ctx context.Context, req *spb.CreateLocationRequest) (*spb.CreateLocationResponse, error) {
