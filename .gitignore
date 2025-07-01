@@ -16,6 +16,9 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+# Vue and Vite build artifacts.
+frontend/*/dist/
+frontend/*/node_modules/
 
 # Go workspace file
 go.work
