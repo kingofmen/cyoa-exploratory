@@ -19,6 +19,7 @@ import (
 const (
 	CreateLocationURL = "/locations/create"
 	UpdateLocationURL = "/location/update"
+	VueEditStoryURL   = "/edit_story"
 
 	createCtx  = "create"
 	updateCtx  = "update"
@@ -41,6 +42,8 @@ type indexData struct {
 	UpdateLocTitle   string
 	UpdateLocContent string
 	DeleteLoc        string
+
+	CurrentStoryJSON string
 }
 
 // locationData holds data to display a Location.
@@ -52,6 +55,7 @@ type locationData struct {
 type Handler struct {
 	index    *template.Template
 	location *template.Template
+	vuetmpl  *template.Template
 	client   spb.CyoaClient
 }
 
@@ -60,6 +64,7 @@ func NewHandler(cl spb.CyoaClient) *Handler {
 	return &Handler{
 		index:    template.Must(template.ParseFiles("frontend/content/index.html")),
 		location: template.Must(template.ParseFiles("frontend/content/location.html")),
+		vuetmpl:  template.Must(template.ParseFiles("frontend/story_editor_app/dist/story_editor.html")),
 		client:   cl,
 	}
 }
@@ -192,4 +197,10 @@ func (h *Handler) UpdateLocationHandler(w http.ResponseWriter, req *http.Request
 		log.Printf("Location with ID %d updated by frontend handler.", locID)
 	}
 	http.Redirect(w, req, "/", http.StatusSeeOther)
+}
+
+// VueExperimentalHandler handles the experimental Vue story editor.
+func (h *Handler) VueExperimentalHandler(w http.ResponseWriter, req *http.Request) {
+	data := makeIndexData()
+	h.vuetmpl.Execute(w, data)
 }

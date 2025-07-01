@@ -227,7 +227,12 @@ func main() {
 	feRoot := server.NewHandler(fcli)
 	httpMux.HandleFunc(server.CreateLocationURL, feRoot.CreateLocation)
 	httpMux.HandleFunc(server.UpdateLocationURL, feRoot.UpdateLocationHandler)
-	httpMux.Handle("/", feRoot) // Serve static files at the root
+	httpMux.HandleFunc(server.VueEditStoryURL, feRoot.VueExperimentalHandler)
+	httpMux.Handle("/", feRoot)
+
+	// For loading internal files e.g. JavaScript.
+	fs := http.FileServer(http.Dir("frontend/story_editor_app/dist"))
+	httpMux.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	httpS := &http.Server{
 		Handler: httpMux,

@@ -1,0 +1,32 @@
+{
+  "name": "cyoa-vue-app",
+  "version": "1.0.0",
+    "description": "CYOA experimental Vue app, now also with Vite.",
+  "main": "index.js",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build:css": "tailwindcss -i ./src/input.css -o ./dist/style.css --minify",
+    "build:vue": "vite build",
+    "copy:html": "cp \"./src/input.html\" ./dist/story_editor.html",
+    "copy:js": "cpx \"./src/edit_story.js\" ./dist",
+    "build": "npm run clean && mkdir -p ./dist ./dist/js && npm run build:css && npm run build:vue && npm run copy:html",
+    "watch:css": "tailwindcss -i ./src/css/input.css -o ./dist/css/style.css --watch",
+    "watch:html": "cpx \"./src/input.html\" ./dist --watch",
+    "watch:js": "cpx \"./src/js/main.js\" ./dist/js --watch",
+    "dev": "npm run clean && mkdir -p dist/css dist/js && npm run watch:css & npm run watch:html & npm run watch:js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.5",
+    "autoprefixer": "^10.4.19",
+    "cpx": "^1.5.0",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.4",
+    "vite": "^5.3.1",
+    "vue": "^3.4.27"
+  }
+}
+
+
