@@ -5,11 +5,13 @@ import (
 	"context"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
 
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
 	spb "github.com/kingofmen/cyoa-exploratory/backend/proto"
@@ -17,9 +19,10 @@ import (
 )
 
 const (
-	CreateLocationURL = "/locations/create"
-	UpdateLocationURL = "/location/update"
-	VueEditStoryURL   = "/edit_story"
+	CreateLocationURL      = "/locations/create"
+	UpdateLocationURL      = "/location/update"
+	VueEditStoryURL        = "/edit_story"
+	CreateOrUpdateStoryURL = "/api/story/update"
 
 	createCtx  = "create"
 	updateCtx  = "update"
@@ -203,4 +206,51 @@ func (h *Handler) UpdateLocationHandler(w http.ResponseWriter, req *http.Request
 func (h *Handler) VueExperimentalHandler(w http.ResponseWriter, req *http.Request) {
 	data := makeIndexData()
 	h.vuetmpl.Execute(w, data)
+}
+
+// CreateOrUpdateStoryHandler saves story data to the database.
+func (h *Handler) CreateOrUpdateStoryHandler(w http.ResponseWriter, req *http.Request) {
+	bts, err := io.ReadAll(req.Body)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("could not read request body: %v", err), http.StatusBadRequest)
+		return
+	}
+	story := &storypb.Story{}
+	if err := protojson.Unmarshal(bts, story); err != nil {
+		http.Error(w, fmt.Sprintf("could not parse Story object: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	ctx := req.Context()
+	updResp := &spb.UpdateStoryResponse{}
+	if story.GetId() > 0 {
+		updResp, err = h.client.UpdateStory(ctx, &spb.UpdateStoryRequest{
+			Story: story,
+		})
+		if err != nil {
+			http.Error(w, fmt.Sprintf("update error: %v", err), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		cr, err := h.client.CreateStory(ctx, &spb.CreateStoryRequest{
+			Story: story,
+		})
+		if err != nil {
+			http.Error(w, fmt.Sprintf("create error: %v", err), http.StatusInternalServerError)
+			return
+		}
+		updResp.Story = cr.GetStory()
+	}
+
+	bts, err = protojson.Marshal(updResp)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error marshaling proto: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(bts); err != nil {
+		http.Error(w, fmt.Sprintf("error writing JSON: %v", err), http.StatusInternalServerError)
+		return
+	}
 }

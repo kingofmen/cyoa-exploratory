@@ -227,6 +227,7 @@ func main() {
 	feRoot := server.NewHandler(fcli)
 	httpMux.HandleFunc(server.CreateLocationURL, feRoot.CreateLocation)
 	httpMux.HandleFunc(server.UpdateLocationURL, feRoot.UpdateLocationHandler)
+	httpMux.HandleFunc(server.CreateOrUpdateStoryURL, feRoot.CreateOrUpdateStoryHandler)
 	httpMux.HandleFunc(server.VueEditStoryURL, feRoot.VueExperimentalHandler)
 	httpMux.Handle("/", feRoot)
 
