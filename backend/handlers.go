@@ -169,6 +169,25 @@ func createStoryImpl(ctx context.Context, db *sql.DB, str *storypb.Story) (*spb.
 	}, nil
 }
 
+func getStoryImpl(ctx context.Context, db *sql.DB, id int64) (*spb.GetStoryResponse, error) {
+	txn, err := db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		return nil, fmt.Errorf("could not begin transaction: %w", err)
+	}
+	str, err := loadStory(ctx, txn, id)
+	if err != nil {
+		return nil, txnError(fmt.Sprintf("could not find story %d", id), txn, err)
+	}
+
+	if err := txn.Commit(); err != nil {
+		return nil, txnError("could not commit query", txn, err)
+	}
+	str.Id = proto.Int64(id)
+	return &spb.GetStoryResponse{
+		Story: str,
+	}, nil
+}
+
 func updateStoryImpl(ctx context.Context, db *sql.DB, str *storypb.Story) (*spb.UpdateStoryResponse, error) {
 	txn, err := db.BeginTx(ctx, nil)
 	if err != nil {

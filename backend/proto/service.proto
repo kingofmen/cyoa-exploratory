@@ -80,8 +80,12 @@ message UpdateStoryResponse{
 message DeleteStoryRequest {}
 message DeleteStoryResponse{}
 
-message GetStoryRequest {}
-message GetStoryResponse{}
+message GetStoryRequest {
+  int64 id = 1;
+}
+message GetStoryResponse{
+  story.Story story = 1;
+}
 
 // ListStories returns a list of basic views of stories,
 // that is, only ID, title, and description is included.
