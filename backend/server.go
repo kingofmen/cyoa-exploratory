@@ -128,7 +128,11 @@ func (s *Server) UpdateStory(ctx context.Context, req *spb.UpdateStoryRequest) (
 }
 
 func (s *Server) DeleteStory(ctx context.Context, req *spb.DeleteStoryRequest) (*spb.DeleteStoryResponse, error) {
-	return &spb.DeleteStoryResponse{}, nil
+	sid := req.GetId()
+	if sid < 1 {
+		return nil, fmt.Errorf("DeleteStory called with invalid story ID %d", sid)
+	}
+	return deleteStoryImpl(ctx, s.db, sid)
 }
 
 func (s *Server) GetStory(ctx context.Context, req *spb.GetStoryRequest) (*spb.GetStoryResponse, error) {

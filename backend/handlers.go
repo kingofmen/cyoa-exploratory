@@ -188,6 +188,21 @@ func getStoryImpl(ctx context.Context, db *sql.DB, id int64) (*spb.GetStoryRespo
 	}, nil
 }
 
+func deleteStoryImpl(ctx context.Context, db *sql.DB, id int64) (*spb.DeleteStoryResponse, error) {
+	txn, err := db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		return nil, fmt.Errorf("could not begin transaction: %w", err)
+	}
+	if _, err := txn.ExecContext(ctx, `DELETE FROM Stories WHERE id = ?`, id); err != nil {
+		return nil, txnError(fmt.Sprintf("could not delete Story %d", id), txn, err)
+	}
+
+	if err := txn.Commit(); err != nil {
+		return nil, txnError("could not commit deletion", txn, err)
+	}
+	return &spb.DeleteStoryResponse{}, nil
+}
+
 func updateStoryImpl(ctx context.Context, db *sql.DB, str *storypb.Story) (*spb.UpdateStoryResponse, error) {
 	txn, err := db.BeginTx(ctx, nil)
 	if err != nil {
