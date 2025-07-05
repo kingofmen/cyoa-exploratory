@@ -35,23 +35,16 @@ const (
 // indexData holds data for the front page.
 type indexData struct {
 	Timestamp        string
-	Locations        []*storypb.Location
-	CreateLoc        string
+	Stories          []*storypb.Story
+	CurrentStoryJSON string
+	EditStoryURI     string
+
 	CreateLocTitle   string
 	CreateLocContent string
-
-	UpdateLoc        string
 	UpdateLocId      string
 	UpdateLocTitle   string
 	UpdateLocContent string
 	DeleteLoc        string
-
-	CurrentStoryJSON string
-}
-
-// locationData holds data to display a Location.
-type locationData struct {
-	Proto *storypb.Location
 }
 
 // Handler handles incoming requests. It implements http.Handler.
@@ -78,28 +71,23 @@ func makeKey(ctx, key string) string {
 
 func makeIndexData() indexData {
 	return indexData{
-		Timestamp:        fmt.Sprintf("%s", time.Now()),
-		CreateLoc:        CreateLocationURL,
-		CreateLocTitle:   makeKey(createCtx, titleKey),
-		CreateLocContent: makeKey(createCtx, contentKey),
-		UpdateLoc:        UpdateLocationURL,
-		UpdateLocId:      makeKey(updateCtx, locIdKey),
-		UpdateLocTitle:   makeKey(updateCtx, titleKey),
-		UpdateLocContent: makeKey(updateCtx, contentKey),
-		DeleteLoc:        makeKey(updateCtx, deleteKey),
+		Timestamp:    fmt.Sprintf("%s", time.Now()),
+		EditStoryURI: VueEditStoryURL,
 	}
 }
 
 // ServeHTTP writes a response to the request into the writer.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	locResp, err := h.client.ListLocations(req.Context(), &spb.ListLocationsRequest{})
+	strResp, err := h.client.ListStories(req.Context(), &spb.ListStoriesRequest{})
 	if err != nil {
-		http.Error(w, fmt.Errorf("could not load locations: %w", err).Error(), http.StatusInternalServerError)
+		http.Error(w, fmt.Errorf("could not load stories: %w", err).Error(), http.StatusInternalServerError)
 		return
 	}
 	data := makeIndexData()
-	data.Locations = locResp.GetLocations()
-	h.index.Execute(w, data)
+	data.Stories = strResp.GetStories()
+	if err := h.index.Execute(w, data); err != nil {
+		log.Printf("Template error: %v", err)
+	}
 }
 
 // CreateLocation passes the request to the gRPC backend and returns
@@ -204,8 +192,32 @@ func (h *Handler) UpdateLocationHandler(w http.ResponseWriter, req *http.Request
 
 // VueExperimentalHandler handles the experimental Vue story editor.
 func (h *Handler) VueExperimentalHandler(w http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
+	params := req.URL.Query()
 	data := makeIndexData()
-	h.vuetmpl.Execute(w, data)
+	if strid := params.Get("story_id"); len(strid) > 0 {
+		sid, err := strconv.ParseInt(strid, 10, 64)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Cannot edit story with bad ID %q: %v", strid, err), http.StatusBadRequest)
+			return
+		}
+		resp, err := h.client.GetStory(ctx, &spb.GetStoryRequest{
+			Id: proto.Int64(sid),
+		})
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Cannot find story with ID %q: %v", strid, err), http.StatusBadRequest)
+			return
+		}
+		bts, err := protojson.Marshal(resp.GetStory())
+		if err != nil {
+			http.Error(w, fmt.Sprintf("error marshaling proto: %v", err), http.StatusInternalServerError)
+			return
+		}
+		data.CurrentStoryJSON = string(bts)
+	}
+	if err := h.vuetmpl.Execute(w, data); err != nil {
+		log.Printf("Template execution error: %v", err)
+	}
 }
 
 // CreateOrUpdateStoryHandler saves story data to the database.
@@ -215,17 +227,17 @@ func (h *Handler) CreateOrUpdateStoryHandler(w http.ResponseWriter, req *http.Re
 		http.Error(w, fmt.Sprintf("could not read request body: %v", err), http.StatusBadRequest)
 		return
 	}
-	story := &storypb.Story{}
-	if err := protojson.Unmarshal(bts, story); err != nil {
+	str := &storypb.Story{}
+	if err := protojson.Unmarshal(bts, str); err != nil {
 		http.Error(w, fmt.Sprintf("could not parse Story object: %v", err), http.StatusBadRequest)
 		return
 	}
 
 	ctx := req.Context()
 	updResp := &spb.UpdateStoryResponse{}
-	if story.GetId() > 0 {
+	if str.GetId() > 0 {
 		updResp, err = h.client.UpdateStory(ctx, &spb.UpdateStoryRequest{
-			Story: story,
+			Story: str,
 		})
 		if err != nil {
 			http.Error(w, fmt.Sprintf("update error: %v", err), http.StatusInternalServerError)
@@ -233,7 +245,7 @@ func (h *Handler) CreateOrUpdateStoryHandler(w http.ResponseWriter, req *http.Re
 		}
 	} else {
 		cr, err := h.client.CreateStory(ctx, &spb.CreateStoryRequest{
-			Story: story,
+			Story: str,
 		})
 		if err != nil {
 			http.Error(w, fmt.Sprintf("create error: %v", err), http.StatusInternalServerError)

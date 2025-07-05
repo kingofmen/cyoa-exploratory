@@ -41,6 +41,7 @@ export default {
 
         return {
             story: {
+	        id: initialStory.id,
                 title: initialStory.title,
                 description: initialStory.description,
             },

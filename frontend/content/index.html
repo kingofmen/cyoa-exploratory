@@ -5,86 +5,18 @@
     <meta charset="utf-8">
 </head>
 <body>
-    <h1>This is my Hello CRUD page.</h1>
-    <p>This page is my proof-of-principle bare-bones warmup exercise
-    for dynamic HTML backed by a CRUDdy database. The current time is
+    <h1>This is my Hello Story Editor page.</h1>
+    <p>This is not quite so bare bones now! I now display a list of
+    stories with edit links. Play and delete links remain TODO. The current time is
       {{.Timestamp}}.</p>
 
-    <h1>Locations</h1>
-      {{ range $loc := .Locations }}
+    <h1>Stories</h1>
+      {{- $uri := .EditStoryURI -}}
+      {{ range $str := .Stories }}
       <details>
-        <summary> {{ $loc.Title }} </summary>
-	{{ $loc.Content }}
+        <summary> {{ $str.Id}}: {{ $str.Title }} Play <a href="{{ $uri }}?story_id={{$str.Id}}">Edit</a> Delete</summary>
+	{{ $str.Description }}
       </details>
       {{ end }}
-      <h1>Create New Location</h1>
-      <form action="{{ .CreateLoc }}" method="POST">
-        <input
-          id="{{ .CreateLocTitle }}"
-          name="{{ .CreateLocTitle }}"
-          required
-          minlength="10"
-          maxlength="100"
-        /></br>
-        <textarea
-          id="{{ .CreateLocContent }}"
-          name="{{ .CreateLocContent }}"
-          required
-          minlength="50"
-        >Lorem Ipsum</textarea></br>
-        <button>Create Location</button>
-      </form>
-
-    <h1>Update Location</h1>
-    <form action="{{ .UpdateLoc }}" method="POST">
-        <label for="{{ .UpdateLocId }}">Select Location:</label><br/>
-        <select id="{{ .UpdateLocId }}" name="{{ .UpdateLocId }}" required>
-            <option value="" disabled selected>-- Select a Location --</option>
-            {{ range $loc := .Locations }}
-            <option value="{{ $loc.Id }}" data-title="{{ $loc.Title }}" data-content="{{ $loc.Content }}">{{ $loc.Title }}</option>
-            {{ end }}
-        </select><br/><br/>
-
-        <label for="{{ .UpdateLocTitle }}">New Title:</label><br/>
-        <input
-          id="{{ .UpdateLocTitle }}"
-          name="{{ .UpdateLocTitle }}"
-          required
-          minlength="10"
-          maxlength="100"
-	  value="New Title Here"
-        /></br>
-        <label for="{{ .UpdateLocContent }}">New Content:</label><br/>
-        <textarea
-	  id="{{ .UpdateLocContent }}"
-          name="{{ .UpdateLocContent }}"
-	  minlength="5"
-	  rows="10"
-	  cols="80">New Content Here
-	</textarea><br/><br/>
-
-        <input type="checkbox"
-	       id="{{ .DeleteLoc }}"
-	       name="{{ .DeleteLoc }}"
-	       value="{{ .DeleteLoc }}">
-        <label for="{{ .DeleteLoc }}">Delete this location</label><br/><br/>
-
-        <button type="submit">Update/Delete Location</button>
-    </form>
-
-    <script>
-        const locationSelect = document.getElementById('{{ .UpdateLocId }}');
-        const newTitleInput = document.getElementById('{{ .UpdateLocTitle }}');
-        const newContentTextarea = document.getElementById('{{ .UpdateLocContent }}');
-
-        locationSelect.addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            const title = selectedOption.getAttribute('data-title');
-            const content = selectedOption.getAttribute('data-content');
-
-            newTitleInput.value = title;
-            newContentTextarea.value = content;
-        });
-    </script>
 </body>
 </html>
