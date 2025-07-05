@@ -229,6 +229,7 @@ func main() {
 	httpMux.HandleFunc(server.UpdateLocationURL, feRoot.UpdateLocationHandler)
 	httpMux.HandleFunc(server.CreateOrUpdateStoryURL, feRoot.CreateOrUpdateStoryHandler)
 	httpMux.HandleFunc(server.VueEditStoryURL, feRoot.VueExperimentalHandler)
+	httpMux.HandleFunc(server.DeleteStoryURL, feRoot.DeleteStoryHandler)
 	httpMux.Handle("/", feRoot)
 
 	// For loading internal files e.g. JavaScript.

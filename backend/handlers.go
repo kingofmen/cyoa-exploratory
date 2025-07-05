@@ -85,7 +85,7 @@ func deleteLocationImpl(ctx context.Context, db *sql.DB, id int64) (*spb.DeleteL
 	}
 
 	if err := txn.Commit(); err != nil {
-		return nil, txnError("could not write to database", txn, err)
+		return nil, txnError("could not write deletion to database", txn, err)
 	}
 
 	return &spb.DeleteLocationResponse{}, nil
@@ -189,7 +189,7 @@ func getStoryImpl(ctx context.Context, db *sql.DB, id int64) (*spb.GetStoryRespo
 }
 
 func deleteStoryImpl(ctx context.Context, db *sql.DB, id int64) (*spb.DeleteStoryResponse, error) {
-	txn, err := db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+	txn, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not begin transaction: %w", err)
 	}

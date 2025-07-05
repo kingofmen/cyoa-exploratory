@@ -23,6 +23,7 @@ const (
 	UpdateLocationURL      = "/location/update"
 	VueEditStoryURL        = "/edit_story"
 	CreateOrUpdateStoryURL = "/api/story/update"
+	DeleteStoryURL         = "/api/story/delete"
 
 	createCtx  = "create"
 	updateCtx  = "update"
@@ -30,6 +31,7 @@ const (
 	contentKey = "content_key"
 	locIdKey   = "location_id_key"
 	deleteKey  = "delete_key"
+	storyIdKey = "story_id"
 )
 
 // indexData holds data for the front page.
@@ -38,6 +40,8 @@ type indexData struct {
 	Stories          []*storypb.Story
 	CurrentStoryJSON string
 	EditStoryURI     string
+	DeleteStoryURI   string
+	StoryIdKey       string
 
 	CreateLocTitle   string
 	CreateLocContent string
@@ -71,8 +75,10 @@ func makeKey(ctx, key string) string {
 
 func makeIndexData() indexData {
 	return indexData{
-		Timestamp:    fmt.Sprintf("%s", time.Now()),
-		EditStoryURI: VueEditStoryURL,
+		Timestamp:      fmt.Sprintf("%s", time.Now()),
+		EditStoryURI:   VueEditStoryURL,
+		DeleteStoryURI: DeleteStoryURL,
+		StoryIdKey:     storyIdKey,
 	}
 }
 
@@ -195,7 +201,7 @@ func (h *Handler) VueExperimentalHandler(w http.ResponseWriter, req *http.Reques
 	ctx := req.Context()
 	params := req.URL.Query()
 	data := makeIndexData()
-	if strid := params.Get("story_id"); len(strid) > 0 {
+	if strid := params.Get(storyIdKey); len(strid) > 0 {
 		sid, err := strconv.ParseInt(strid, 10, 64)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Cannot edit story with bad ID %q: %v", strid, err), http.StatusBadRequest)
@@ -265,4 +271,27 @@ func (h *Handler) CreateOrUpdateStoryHandler(w http.ResponseWriter, req *http.Re
 		http.Error(w, fmt.Sprintf("error writing JSON: %v", err), http.StatusInternalServerError)
 		return
 	}
+}
+
+// DeleteStory deletes the story with the given ID.
+func (h *Handler) DeleteStoryHandler(w http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
+	params := req.URL.Query()
+	if strid := params.Get(storyIdKey); len(strid) > 0 {
+		sid, err := strconv.ParseInt(strid, 10, 64)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Cannot edit story with bad ID %q: %v", strid, err), http.StatusBadRequest)
+			return
+		}
+		if sid > 0 {
+			if _, err := h.client.DeleteStory(ctx, &spb.DeleteStoryRequest{
+				Id: proto.Int64(sid),
+			}); err != nil {
+				http.Error(w, fmt.Sprintf("Failed to delete story with ID %q: %v", strid, err), http.StatusBadRequest)
+				return
+			}
+		}
+	}
+
+	http.Redirect(w, req, "/", http.StatusSeeOther)
 }
