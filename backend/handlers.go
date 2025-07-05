@@ -211,6 +211,41 @@ func updateStoryImpl(ctx context.Context, db *sql.DB, str *storypb.Story) (*spb.
 	}, nil
 }
 
+func listStoriesImpl(ctx context.Context, db *sql.DB, req *spb.ListStoriesRequest) (*spb.ListStoriesResponse, error) {
+	resp := &spb.ListStoriesResponse{
+		Stories: make([]*storypb.Story, 0, 10),
+	}
+	txn, err := db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		return nil, fmt.Errorf("could not begin transaction: %w", err)
+	}
+	rows, err := txn.QueryContext(ctx, `SELECT l.id, l.proto FROM Stories AS l ORDER BY l.id ASC`)
+	if err != nil {
+		return nil, txnError("could not list stories", txn, err)
+	}
+	for rows.Next() {
+		var id int64
+		blob := []byte{}
+		if err := rows.Scan(&id, &blob); err != nil {
+			return nil, txnError("error scanning story", txn, err)
+		}
+		str := &storypb.Story{}
+		if err := proto.Unmarshal(blob, str); err != nil {
+			return nil, txnError(fmt.Sprintf("could not unmarshal story %d", id), txn, err)
+		}
+		// Clone the limited view.
+		resp.Stories = append(resp.Stories, &storypb.Story{
+			Id:          proto.Int64(id),
+			Title:       proto.String(str.GetTitle()),
+			Description: proto.String(str.GetDescription()),
+		})
+	}
+	if err := txn.Commit(); err != nil {
+		return nil, txnError("could not commit query", txn, err)
+	}
+	return resp, nil
+}
+
 func createActionImpl(ctx context.Context, db *sql.DB, act *storypb.Action) (*spb.CreateActionResponse, error) {
 	blob, err := proto.Marshal(act)
 	if err != nil {

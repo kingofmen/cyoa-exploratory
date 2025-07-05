@@ -136,7 +136,11 @@ func (s *Server) GetStory(ctx context.Context, req *spb.GetStoryRequest) (*spb.G
 }
 
 func (s *Server) ListStories(ctx context.Context, req *spb.ListStoriesRequest) (*spb.ListStoriesResponse, error) {
-	return &spb.ListStoriesResponse{}, nil
+	resp, err := listStoriesImpl(ctx, s.db, req)
+	if err != nil {
+		return nil, fmt.Errorf("ListStories error: %w", err)
+	}
+	return resp, nil
 }
 
 func (s *Server) CreateAction(ctx context.Context, req *spb.CreateActionRequest) (*spb.CreateActionResponse, error) {

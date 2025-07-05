@@ -83,8 +83,12 @@ message DeleteStoryResponse{}
 message GetStoryRequest {}
 message GetStoryResponse{}
 
+// ListStories returns a list of basic views of stories,
+// that is, only ID, title, and description is included.
 message ListStoriesRequest{}
-message ListStoriesResponse{}
+message ListStoriesResponse{
+  repeated story.Story stories = 1;
+}
 
 // Actions.
 message CreateActionRequest{
