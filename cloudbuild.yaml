@@ -47,6 +47,10 @@ steps:
           --go-grpc_opt=paths=source_relative
     id: GenerateGolangProtoCode
     entrypoint: /bin/bash
+  # Vite frontend build.
+  - name: 'gcr.io/cloud-builders/npm'
+    args: ['run', 'build-ci']
+    dir: 'frontend/story_editor_app/'
   - name: gcr.io/k8s-skaffold/pack
     args:
       - build
@@ -56,10 +60,6 @@ steps:
       - '--network=cloudbuild'
     id: Buildpack
     entrypoint: pack
-  # Vite frontend build.
-  - name: 'gcr.io/cloud-builders/npm'
-    args: ['run', 'build-ci']
-    dir: 'frontend/story_editor_app/'
   - name: gcr.io/cloud-builders/docker
     args:
       - push
