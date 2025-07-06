@@ -14,10 +14,11 @@
       {{- $strIdKey  := .StoryIdKey -}}
       {{- $editURI   := .EditStoryURI -}}
       {{- $deleteURI := .DeleteStoryURI -}}
+      <a href="{{$editURI}}">Create New</a><br /><br />
       {{ range $str  := .Stories }}
       <details>
         <summary>
-	  {{ $str.Id}}: {{ $str.Title }}
+	  {{ $str.Title }}
 	  Play
 	  <a href="{{$editURI}}?{{$strIdKey}}={{$str.Id}}">Edit</a>
 	  <a href="{{$deleteURI}}?{{$strIdKey}}={{$str.Id}}">Delete</a>
