@@ -56,19 +56,16 @@ steps:
       - '--network=cloudbuild'
     id: Buildpack
     entrypoint: pack
+  # Vite frontend build.
+  - name: 'gcr.io/cloud-builders/npm'
+    args: ['run', 'build-ci']
+    dir: 'frontend/story_editor_app/'
   - name: gcr.io/cloud-builders/docker
     args:
       - push
       - >-
         $_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$REPO_NAME/$_SERVICE_NAME:$COMMIT_SHA
     id: Push
-  # Vite frontend build.
-  - name: 'gcr.io/cloud-builders/npm'
-    args: ['install']
-    dir: 'frontend/story_editor_app/'
-  - name: 'gcr.io/cloud-builders/npm'
-    args: ['run', 'build']
-    dir: 'frontend/story_editor_app/'
   - name: 'golang:1.24'
     env:
       - DB_USER=$_DB_USER

@@ -10,6 +10,7 @@
     "copy:html": "cp \"./src/story_editor.html\" ./dist/story_editor.html",
     "copy:css": "cp \"./src/style.css\" ./dist/style.css",
     "build": "npm run clean && mkdir -p ./dist ./dist/js && npm run build:css && npm run build:vue && npm run copy:html",
+    "build-ci": "npm install && npm run build",
     "qbuild": "npm run clean && mkdir -p ./dist ./dist/js && npm run copy:css && npm run build:vue && npm run copy:html",
     "watch:css": "tailwindcss -i ./src/style.css -o ./dist/css/style.css --watch",
     "watch:html": "cpx \"./src/story_editor.html\" ./dist --watch",
