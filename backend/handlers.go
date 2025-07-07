@@ -203,45 +203,36 @@ func deleteStoryImpl(ctx context.Context, db *sql.DB, id int64) (*spb.DeleteStor
 	return &spb.DeleteStoryResponse{}, nil
 }
 
-func updateStoryImpl(ctx context.Context, db *sql.DB, str *storypb.Story) (*spb.UpdateStoryResponse, error) {
-	txn, err := db.BeginTx(ctx, nil)
+// updateStoryImpl writes the provided story to the transaction, creating it if needed.
+func updateStoryImpl(ctx context.Context, txn *sql.Tx, upd *storypb.Story) (*spb.UpdateStoryResponse, error) {
+	sid := upd.GetId()
+	var wrt *storypb.Story
+	var err error
+	if sid == 0 {
+		if wrt, err = createStory(ctx, txn, upd); err != nil {
+			return nil, fmt.Errorf("could not create new story: %w", err)
+		}
+	} else if wrt, err = loadStory(ctx, txn, sid); err != nil {
+		return nil, fmt.Errorf("could not read story %d: %w", sid, err)
+	}
+
+	// Merge everything except events, which are overwritten.
+	proto.Merge(wrt, upd)
+	if upd.GetEvents() != nil {
+		wrt.Events = upd.GetEvents()
+	}
+
+	blob, err := proto.Marshal(wrt)
 	if err != nil {
-		return nil, fmt.Errorf("could not begin transaction: %w", err)
+		return nil, fmt.Errorf("could not marshal updated story %d: %w", sid, err)
 	}
 
-	sid := str.GetId()
-	old, err := loadStory(ctx, txn, sid)
-	if err != nil {
-		return nil, txnError(fmt.Sprintf("could not read story %d", sid), txn, err)
-	}
-
-	if nt := str.GetTitle(); len(nt) == 0 {
-		str.Title = proto.String(old.GetTitle())
-	}
-	if nd := str.GetDescription(); len(nd) == 0 {
-		str.Description = proto.String(old.GetDescription())
-	}
-	if nsl := str.GetStartLocationId(); nsl < 1 {
-		str.StartLocationId = proto.Int64(old.GetStartLocationId())
-	}
-	if evts := str.GetEvents(); len(evts) == 0 {
-		str.Events = old.GetEvents()
-	}
-
-	blob, err := proto.Marshal(str)
-	if err != nil {
-		return nil, txnError(fmt.Sprintf("could not marshal updated story %d", sid), txn, err)
-	}
-
-	if _, err := txn.ExecContext(ctx, `UPDATE Stories SET title = ?, proto = ? WHERE id = ?`, str.GetTitle(), blob, sid); err != nil {
-		return nil, txnError(fmt.Sprintf("could not update story %d", sid), txn, err)
-	}
-	if err := txn.Commit(); err != nil {
-		return nil, txnError("could not write to database", txn, err)
+	if _, err = txn.ExecContext(ctx, `UPDATE Stories SET title = ?, proto = ? WHERE id = ?`, wrt.GetTitle(), blob, wrt.GetId()); err != nil {
+		return nil, fmt.Errorf("could not update stories table: %w", err)
 	}
 
 	return &spb.UpdateStoryResponse{
-		Story: str,
+		Story: wrt,
 	}, nil
 }
 

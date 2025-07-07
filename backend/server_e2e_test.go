@@ -72,7 +72,7 @@ func TestMain(m *testing.M) {
 func TestStoryE2E(t *testing.T) {
 	ctx := context.Background()
 	srv := New(db).WithNarrator(narrate.NewDebug())
-	csresp, err := srv.CreateStory(ctx, &spb.CreateStoryRequest{
+	csresp, err := srv.UpdateStory(ctx, &spb.UpdateStoryRequest{
 		Story: &storypb.Story{
 			Title:       proto.String("E2E test story"),
 			Description: proto.String("Story for end-to-end testing"),

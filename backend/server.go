@@ -117,13 +117,21 @@ func (s *Server) UpdateStory(ctx context.Context, req *spb.UpdateStoryRequest) (
 	if str == nil {
 		return nil, fmt.Errorf("UpdateStory called with nil story")
 	}
-	if id := str.GetId(); id < 1 {
-		return nil, fmt.Errorf("UpdateStory called with invalid story ID %d", id)
-	}
-	resp, err := updateStoryImpl(ctx, s.db, str)
+
+	txn, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateStory error: %w", err)
+		return nil, fmt.Errorf("could not begin transaction: %w", err)
 	}
+
+	resp, err := updateStoryImpl(ctx, txn, str)
+	if err != nil {
+		return nil, txnError("could not update story", txn, err)
+	}
+
+	if err := txn.Commit(); err != nil {
+		return nil, txnError("could not commit to database", txn, err)
+	}
+
 	return resp, nil
 }
 
