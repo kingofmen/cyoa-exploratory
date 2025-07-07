@@ -240,24 +240,14 @@ func (h *Handler) CreateOrUpdateStoryHandler(w http.ResponseWriter, req *http.Re
 	}
 
 	ctx := req.Context()
-	updResp := &spb.UpdateStoryResponse{}
-	if str.GetId() > 0 {
-		updResp, err = h.client.UpdateStory(ctx, &spb.UpdateStoryRequest{
-			Story: str,
-		})
-		if err != nil {
-			http.Error(w, fmt.Sprintf("update error: %v", err), http.StatusInternalServerError)
-			return
-		}
-	} else {
-		cr, err := h.client.CreateStory(ctx, &spb.CreateStoryRequest{
-			Story: str,
-		})
-		if err != nil {
-			http.Error(w, fmt.Sprintf("create error: %v", err), http.StatusInternalServerError)
-			return
-		}
-		updResp.Story = cr.GetStory()
+	updReq := &spb.UpdateStoryRequest{
+		Story: str,
+	}
+
+	updResp, err := h.client.UpdateStory(ctx, updReq)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("backend error: %v", err), http.StatusInternalServerError)
+		return
 	}
 
 	bts, err = protojson.Marshal(updResp)

@@ -141,34 +141,6 @@ func listLocationsImpl(ctx context.Context, db *sql.DB, req *spb.ListLocationsRe
 	return resp, nil
 }
 
-func createStoryImpl(ctx context.Context, db *sql.DB, str *storypb.Story) (*spb.CreateStoryResponse, error) {
-	blob, err := proto.Marshal(str)
-	if err != nil {
-		return nil, fmt.Errorf("could not marshal story: %w", err)
-	}
-	txn, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, fmt.Errorf("could not begin transaction: %w", err)
-	}
-
-	if _, err := txn.ExecContext(ctx, `INSERT INTO Stories (title, proto) VALUES (?, ?)`, str.GetTitle(), blob); err != nil {
-		return nil, txnError("could not insert into Stories", txn, err)
-	}
-	var sid int64
-	row := txn.QueryRowContext(ctx, `SELECT LAST_INSERT_ID()`)
-	if err := row.Scan(&sid); err != nil {
-		return nil, txnError("could not read back created ID", txn, err)
-	}
-	if err := txn.Commit(); err != nil {
-		return nil, txnError("could not write to database", txn, err)
-	}
-
-	str.Id = proto.Int64(sid)
-	return &spb.CreateStoryResponse{
-		Story: str,
-	}, nil
-}
-
 func getStoryImpl(ctx context.Context, db *sql.DB, id int64) (*spb.GetStoryResponse, error) {
 	txn, err := db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
 	if err != nil {

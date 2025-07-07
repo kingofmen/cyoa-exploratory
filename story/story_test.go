@@ -304,11 +304,18 @@ func TestHandleAction(t *testing.T) {
 
 	for _, cc := range cases {
 		t.Run(cc.desc, func(t *testing.T) {
-			if err := HandleAction(cc.act, cc.loc, cc.game, cc.str); err != nil {
+			evt := &storypb.GameEvent{
+				Action:       cc.act,
+				Location:     cc.loc,
+				GameSnapshot: cc.game,
+				Story:        cc.str,
+			}
+			got, err := HandleEvent(evt)
+			if err != nil {
 				t.Errorf("%s: HandleAction() => %v, want nil", cc.desc, err)
 			}
-			if diff := cmp.Diff(cc.game, cc.want, protocmp.Transform()); diff != "" {
-				t.Errorf("%s: HandleAction() => %s, want %s, diff %s", cc.desc, prototext.Format(cc.game), prototext.Format(cc.want), diff)
+			if diff := cmp.Diff(got, cc.want, protocmp.Transform()); diff != "" {
+				t.Errorf("%s: HandleAction() => %s, want %s, diff %s", cc.desc, prototext.Format(got), prototext.Format(cc.want), diff)
 			}
 		})
 	}
@@ -341,7 +348,13 @@ func TestHandleActionSad(t *testing.T) {
 
 	for _, cc := range cases {
 		t.Run(cc.desc, func(t *testing.T) {
-			err := HandleAction(cc.act, cc.loc, cc.game, cc.str)
+			evt := &storypb.GameEvent{
+				Action:       cc.act,
+				Location:     cc.loc,
+				GameSnapshot: cc.game,
+				Story:        cc.str,
+			}
+			_, err := HandleEvent(evt)
 			if got := fmt.Sprintf("%v", err); !strings.Contains(got, cc.want) {
 				t.Errorf("%s: HandleAction() => %v, want %q", cc.desc, err, cc.want)
 			}

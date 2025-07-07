@@ -113,11 +113,11 @@ func TestStoryE2E(t *testing.T) {
 		},
 	})
 	if err != nil {
-		t.Fatalf("CreateStory() => %v, want nil", err)
+		t.Fatalf("UpdateStory() => %v, want nil", err)
 	}
 	stid := csresp.GetStory().GetId()
 	if stid != 1 {
-		t.Fatalf("CreateStory() returned story ID %d, want 1", stid)
+		t.Fatalf("UpdateStory() returned story ID %d, want 1", stid)
 	}
 
 	clresp1, err := srv.CreateLocation(ctx, &spb.CreateLocationRequest{

@@ -76,13 +76,6 @@ func (fc *FakeClient) ListLocations(ctx context.Context, in *spb.ListLocationsRe
 	return fc.root.ListLocations(ctx, in)
 }
 
-func (fc *FakeClient) CreateStory(ctx context.Context, in *spb.CreateStoryRequest, opts ...grpc.CallOption) (*spb.CreateStoryResponse, error) {
-	if err := fc.validate(); err != nil {
-		return nil, err
-	}
-	return fc.root.CreateStory(ctx, in)
-}
-
 func (fc *FakeClient) UpdateStory(ctx context.Context, in *spb.UpdateStoryRequest, opts ...grpc.CallOption) (*spb.UpdateStoryResponse, error) {
 	if err := fc.validate(); err != nil {
 		return nil, err
