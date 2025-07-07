@@ -83,5 +83,16 @@
   and description and can't even load a specific story from previous
   sessions, but now that I have the framework and moderately
   understand the build pipeline I can do full-stack work.
+\item[July 7th] Some time spent getting the new build steps to work on
+  Cloud, and adding a frontpage with a list of stories and
+  Create/Edit/Delete links. Today I realized that the story proto
+  library, which works excellently for the backend, is not very
+  optimal for the transfer between a frontend web app that allows
+  editing multiuple locations and actions at the same time, and the
+  database that stores them all in separate tables. Spent some time
+  thinking about the data model and came up with the StoryContent
+  proto which just rolls up a number of Locations and other
+  auxilia. That should be relatively easy to translate into JSON and
+  Vue.
 \end{itemize}
 

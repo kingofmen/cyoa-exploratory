@@ -28,6 +28,13 @@ service Cyoa {
   rpc PlayerAction(PlayerActionRequest) returns (PlayerActionResponse) {}
 };
 
+enum StoryView {
+  VIEW_UNSPECIFIED = 0;
+  VIEW_BASIC = 1;
+  VIEW_PROTO = 2;
+  VIEW_CONTENT = 3;
+}
+
 // Locations.
 message CreateLocationRequest {
   story.Location location = 1;
@@ -61,12 +68,18 @@ message ListLocationsResponse{
   repeated story.Location locations = 1;
 }
 
+message StoryContent {
+  repeated story.Location locations = 2;
+}
+
 // UpdateStory creates-or-updates the provided story.
 message UpdateStoryRequest {
   story.Story story = 1;
+  StoryContent content = 2;
 }
 message UpdateStoryResponse{
   story.Story story = 1;
+  StoryContent content = 2;
 }
 
 message DeleteStoryRequest {
@@ -76,9 +89,11 @@ message DeleteStoryResponse{}
 
 message GetStoryRequest {
   int64 id = 1;
+  StoryView view = 2;
 }
 message GetStoryResponse{
   story.Story story = 1;
+  StoryContent content = 2;
 }
 
 // ListStories returns a list of basic views of stories,

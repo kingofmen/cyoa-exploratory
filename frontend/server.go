@@ -208,7 +208,8 @@ func (h *Handler) VueExperimentalHandler(w http.ResponseWriter, req *http.Reques
 			return
 		}
 		resp, err := h.client.GetStory(ctx, &spb.GetStoryRequest{
-			Id: proto.Int64(sid),
+			Id:   proto.Int64(sid),
+			View: spb.StoryView_VIEW_FULL.Enum(),
 		})
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Cannot find story with ID %q: %v", strid, err), http.StatusBadRequest)
