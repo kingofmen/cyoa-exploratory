@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -10,6 +11,10 @@ import (
 
 	"github.com/kingofmen/cyoa-exploratory/db"
 	"github.com/pressly/goose/v3"
+)
+
+var (
+	schemaRedo = flag.Int("schema_redo", -1, "If non-negative, rolls back the database before re-applying migrations.")
 )
 
 func printDebugInfo(migrationFiles string) error {
@@ -38,7 +43,7 @@ func printDebugInfo(migrationFiles string) error {
 	return nil
 }
 
-func migrate() error {
+func migrate(rollback int) error {
 	dbUser := os.Getenv("DB_USER")
 	dbName := os.Getenv("DB_NAME")
 	dbConn := os.Getenv("DB_CONN_TYPE")
@@ -75,6 +80,13 @@ func migrate() error {
 		log.Printf("error getting debug info: %v", err)
 	}
 
+	if rollback >= 0 {
+		log.Printf("Rolling back to database version %d", rollback)
+		if err := goose.DownToContext(ctx, db, filepath.FromSlash(migrationFiles), rollback); err != nil {
+			return fmt.Errorf("goose down to %d (dsn %q, directory %q) failed: %v", rollback, config.FormatDSN(), migrationFiles, err)
+		}
+	}
+
 	if err := goose.UpContext(ctx, db, filepath.FromSlash(migrationFiles)); err != nil {
 		return fmt.Errorf("goose up (dsn %q, directory %q) failed: %v", config.FormatDSN(), migrationFiles, err)
 	}
@@ -82,7 +94,8 @@ func migrate() error {
 }
 
 func main() {
-	if err := migrate(); err != nil {
+	flag.Parse()
+	if err := migrate(*schemaRedo); err != nil {
 		log.Fatalf("error migrating database: %v", err)
 	}
 	log.Println("Successful database migration.")
