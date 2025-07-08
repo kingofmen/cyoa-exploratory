@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	schemaRedo = flag.Int("schema_redo", -1, "If non-negative, rolls back the database before re-applying migrations.")
+	schemaRedo = flag.Int64("schema_redo", -1, "If non-negative, rolls back the database before re-applying migrations.")
 )
 
 func printDebugInfo(migrationFiles string) error {
@@ -43,7 +43,7 @@ func printDebugInfo(migrationFiles string) error {
 	return nil
 }
 
-func migrate(rollback int) error {
+func migrate(rollback int64) error {
 	dbUser := os.Getenv("DB_USER")
 	dbName := os.Getenv("DB_NAME")
 	dbConn := os.Getenv("DB_CONN_TYPE")
