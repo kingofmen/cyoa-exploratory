@@ -76,6 +76,7 @@ steps:
     args:
       - run
       - ./db/migrations/migrate.go
+      - '--schema_redo=$_DB_ROLLBACK'
     id: RunDatabaseMigrations
     entrypoint: go
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
