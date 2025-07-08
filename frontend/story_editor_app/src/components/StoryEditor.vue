@@ -21,6 +21,37 @@
                 class="focus:ring-indigo-500 focus:border-indigo-500"
             ></textarea>
         </div>
+        <div class="mt-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-3">Locations</h3>
+            <button
+                @click="createNewLocation"
+                class="mb-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                Create New Location
+            </button>
+            <div v-if="currentLocation" class="mt-4 p-4 border border-gray-300 rounded-md bg-white">
+                <h4 class="text-lg font-medium text-gray-800 mb-2">Edit Location: {{ currentLocation.title }}</h4>
+                <label :for="'locationTitle-' + currentLocation.id" class="block text-sm font-medium text-gray-700 mb-1">Title:</label>
+                <input
+                    :id="'locationTitle-' + currentLocation.id"
+                    type="text"
+                    v-model="currentLocation.title"
+                    placeholder="Enter location title"
+                    class="focus:ring-indigo-500 focus:border-indigo-500 w-full"
+                />
+            </div>
+            <ul v-if="content.locations && content.locations.length" class="list-disc pl-5 mb-4">
+                <li v-for="location in content.locations" :key="location.id" class="mb-2 flex justify-between items-center">
+                    <span>{{ location.title }}</span>
+                    <button
+                        @click="editLocation(location)"
+                        class="ml-2 px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 text-sm"
+                    >
+                        Edit
+                    </button>
+                </li>
+            </ul>
+            <p v-else class="text-gray-500 mb-4">No locations created yet.</p>
+        </div>
         <button @click="saveChanges" class="w-full">
             Save Changes
         </button>
@@ -38,6 +69,14 @@ export default {
             title: 'New Story Title',
             description: 'Story introduction.',
         };
+	const initialContent = window.initialContentData || {
+                locations: [],
+	}
+
+        // Ensure locations is initialized if not present.
+        if (!initialContent.locations) {
+            initialContent.locations = [];
+        }
 
         return {
             story: {
@@ -45,11 +84,26 @@ export default {
                 title: initialStory.title,
                 description: initialStory.description,
             },
+            content: initialContent,
+            currentLocation: initialContent.locations.length > 0 ? initialContent.locations[0] : null,
             message: '',
             messageType: ''
         };
     },
     methods: {
+        createNewLocation() {
+            const newLocation = {
+                id: crypto.randomUUID(),
+                title: "Default Location title"
+            };
+            this.content.locations.push(newLocation);
+            this.currentLocation = newLocation; // Select the new location for editing
+            this.message = 'New location created';
+            this.messageType = '';
+        },
+        editLocation(location) {
+            this.currentLocation = location;
+        },
         async saveChanges() {
             this.message = 'Saving...';
             this.messageType = '';
