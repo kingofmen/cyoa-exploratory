@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
@@ -118,34 +119,22 @@ func (h *Handler) CreateLocation(w http.ResponseWriter, req *http.Request) {
 }
 
 // deleteLocation deletes the location with the given ID.
-func (h *Handler) deleteLocation(ctx context.Context, locID int64) error {
-	_, err := h.client.DeleteLocation(ctx, &spb.DeleteLocationRequest{LocationId: proto.Int64(locID)})
+func (h *Handler) deleteLocation(ctx context.Context, locID string) error {
+	_, err := h.client.DeleteLocation(ctx, &spb.DeleteLocationRequest{LocationId: proto.String(locID)})
 	return err
 }
 
 // updateLocation updates the provided location.
-func (h *Handler) updateLocation(ctx context.Context, locID int64, title, content string) error {
-	listResp, err := h.client.ListLocations(ctx, &spb.ListLocationsRequest{})
+func (h *Handler) updateLocation(ctx context.Context, locID string, title, content string) error {
+	_, err := h.client.GetLocation(ctx, &spb.GetLocationRequest{LocationId: proto.String(locID)})
 	if err != nil {
-		return fmt.Errorf("error fetching locations to prepare update for ID %d: %v", locID, err)
-	}
-
-	found := false
-	for _, loc := range listResp.GetLocations() {
-		if loc.GetId() == locID {
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		return fmt.Errorf("Location with ID %d not found, cannot update.", locID)
+		return fmt.Errorf("error fetching location to prepare update for ID %s: %v", locID, err)
 	}
 
 	if _, err = h.client.UpdateLocation(ctx, &spb.UpdateLocationRequest{
-		LocationId: proto.Int64(locID),
+		LocationId: proto.String(locID),
 		Location: &storypb.Location{
-			Id:      proto.Int64(locID),
+			Id:      proto.String(locID),
 			Title:   proto.String(title),
 			Content: proto.String(content),
 		},
@@ -163,35 +152,34 @@ func (h *Handler) UpdateLocationHandler(w http.ResponseWriter, req *http.Request
 	}
 
 	data := makeIndexData()
-	locIDStr := req.FormValue(data.UpdateLocId)
+	lid := req.FormValue(data.UpdateLocId)
 	newTitle := req.FormValue(data.UpdateLocTitle)
 	newContent := req.FormValue(data.UpdateLocContent)
 	deleteFlag := req.FormValue(data.DeleteLoc) == data.DeleteLoc
 
-	if locIDStr == "" {
+	if lid == "" {
 		http.Error(w, "Location ID is required for update/delete.", http.StatusBadRequest)
 		return
 	}
 
-	locID, err := strconv.ParseInt(locIDStr, 10, 64)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid Location ID format: %v", err), http.StatusBadRequest)
+	if err := uuid.Validate(lid); err != nil {
+		http.Error(w, fmt.Sprintf("Invalid Location ID %q: %v", lid, err), http.StatusBadRequest)
 		return
 	}
 
 	ctx := req.Context()
 	if deleteFlag {
-		if err := h.deleteLocation(ctx, locID); err != nil {
-			http.Error(w, fmt.Sprintf("Error deleting location with ID %d: %v", locID, err), http.StatusInternalServerError)
+		if err := h.deleteLocation(ctx, lid); err != nil {
+			http.Error(w, fmt.Sprintf("Error deleting location with ID %d: %v", lid, err), http.StatusInternalServerError)
 			return
 		}
-		log.Printf("Location with ID %d deleted by frontend handler.", locID)
+		log.Printf("Location with ID %d deleted by frontend handler.", lid)
 	} else {
-		if err := h.updateLocation(ctx, locID, newTitle, newContent); err != nil {
-			http.Error(w, fmt.Sprintf("Error updating location with ID %d: %v", locID, err), http.StatusInternalServerError)
+		if err := h.updateLocation(ctx, lid, newTitle, newContent); err != nil {
+			http.Error(w, fmt.Sprintf("Error updating location with ID %s: %v", lid, err), http.StatusInternalServerError)
 			return
 		}
-		log.Printf("Location with ID %d updated by frontend handler.", locID)
+		log.Printf("Location with ID %d updated by frontend handler.", lid)
 	}
 	http.Redirect(w, req, "/", http.StatusSeeOther)
 }
@@ -209,7 +197,7 @@ func (h *Handler) VueExperimentalHandler(w http.ResponseWriter, req *http.Reques
 		}
 		resp, err := h.client.GetStory(ctx, &spb.GetStoryRequest{
 			Id:   proto.Int64(sid),
-			View: spb.StoryView_VIEW_FULL.Enum(),
+			View: spb.StoryView_VIEW_CONTENT.Enum(),
 		})
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Cannot find story with ID %q: %v", strid, err), http.StatusBadRequest)

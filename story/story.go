@@ -52,8 +52,8 @@ func allowed(act *storypb.Action, loc *storypb.Location) bool {
 
 // apply sets the new state of the playthrough according to the effect.
 func apply(eff *storypb.Effect, game *storypb.Playthrough) {
-	if nl := eff.GetNewLocationId(); nl != 0 {
-		game.LocationId = proto.Int64(nl)
+	if nl := eff.GetNewLocationId(); len(nl) > 0 {
+		game.LocationId = proto.String(nl)
 	}
 	if k, v := eff.GetTweakValue(), eff.GetTweakAmount(); len(k) > 0 && v != 0 {
 		if len(game.Values) == 0 {
@@ -71,17 +71,17 @@ func HandleEvent(event *storypb.GameEvent) (*storypb.Playthrough, error) {
 	act, loc, str := event.GetAction(), event.GetLocation(), event.GetStory()
 	aid, lid, sid := act.GetId(), loc.GetId(), str.GetId()
 	if clid := game.GetLocationId(); lid != clid {
-		return nil, fmt.Errorf("cannot apply action %d (%s) to location %d (%s) when current location is %d", aid, act.GetTitle(), lid, loc.GetTitle(), clid)
+		return nil, fmt.Errorf("cannot apply action %s (%s) to location %s (%s) when current location is %s", aid, act.GetTitle(), lid, loc.GetTitle(), clid)
 	}
 	if !allowed(act, loc) {
-		return nil, fmt.Errorf("action %d (%s) not allowed in location %d (%s)", aid, act.GetTitle(), lid, loc.GetTitle())
+		return nil, fmt.Errorf("action %s (%s) not allowed in location %s (%s)", aid, act.GetTitle(), lid, loc.GetTitle())
 	}
 
 	state := &gameState{game: game}
 	for idx, tap := range act.GetTriggers() {
 		trigger, err := logic.Eval(tap.GetCondition(), state)
 		if err != nil {
-			log.Printf("Could not evaluate predicate for trigger %d in action %d (%q) of story %d (%q): %v", idx, aid, act.GetTitle(), sid, str.GetTitle(), err)
+			log.Printf("Could not evaluate predicate for trigger %d in action %s (%q) of story %d (%q): %v", idx, aid, act.GetTitle(), sid, str.GetTitle(), err)
 			continue
 		}
 		if !trigger {

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/kingofmen/cyoa-exploratory/narrate"
 	"github.com/kingofmen/cyoa-exploratory/story"
 	"google.golang.org/protobuf/proto"
@@ -57,10 +58,11 @@ func (s *Server) UpdateLocation(ctx context.Context, req *spb.UpdateLocationRequ
 	if len(loc.GetTitle()) < 1 {
 		return nil, fmt.Errorf("cannot update location to have empty title")
 	}
-	if req.GetLocationId() < 1 {
-		return nil, fmt.Errorf("location ID not specified")
+	lid := req.GetLocationId()
+	if err := uuid.Validate(lid); err != nil {
+		return nil, fmt.Errorf("invalid location ID %q: %w", lid, err)
 	}
-	resp, err := updateLocationImpl(ctx, s.db, req.GetLocationId(), loc)
+	resp, err := updateLocationImpl(ctx, s.db, lid, loc)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateLocation error: %w", err)
 	}
@@ -68,10 +70,11 @@ func (s *Server) UpdateLocation(ctx context.Context, req *spb.UpdateLocationRequ
 }
 
 func (s *Server) DeleteLocation(ctx context.Context, req *spb.DeleteLocationRequest) (*spb.DeleteLocationResponse, error) {
-	if req.GetLocationId() < 1 {
-		return nil, fmt.Errorf("location ID not specified")
+	lid := req.GetLocationId()
+	if err := uuid.Validate(lid); err != nil {
+		return nil, fmt.Errorf("invalid location ID %q: %w", lid, err)
 	}
-	resp, err := deleteLocationImpl(ctx, s.db, req.GetLocationId())
+	resp, err := deleteLocationImpl(ctx, s.db, lid)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteLocation error: %w", err)
 	}
@@ -79,10 +82,11 @@ func (s *Server) DeleteLocation(ctx context.Context, req *spb.DeleteLocationRequ
 }
 
 func (s *Server) GetLocation(ctx context.Context, req *spb.GetLocationRequest) (*spb.GetLocationResponse, error) {
-	if req.GetLocationId() < 1 {
-		return nil, fmt.Errorf("location ID not specified")
+	lid := req.GetLocationId()
+	if err := uuid.Validate(lid); err != nil {
+		return nil, fmt.Errorf("invalid location ID %q: %w", lid, err)
 	}
-	resp, err := getLocationImpl(ctx, s.db, req.GetLocationId())
+	resp, err := getLocationImpl(ctx, s.db, lid)
 	if err != nil {
 		return nil, fmt.Errorf("GetLocation error: %w", err)
 	}
@@ -164,8 +168,9 @@ func (s *Server) UpdateAction(ctx context.Context, req *spb.UpdateActionRequest)
 	if act == nil {
 		return nil, fmt.Errorf("UpdateAction called with nil action")
 	}
-	if id := act.GetId(); id < 1 {
-		return nil, fmt.Errorf("UpdateAction called with invalid action ID %d", id)
+	aid := act.GetId()
+	if err := uuid.Validate(aid); err != nil {
+		return nil, fmt.Errorf("invalid action ID %q: %w", aid, err)
 	}
 	resp, err := updateActionImpl(ctx, s.db, act)
 	if err != nil {
@@ -203,23 +208,23 @@ func (s *Server) PlayerAction(ctx context.Context, req *spb.PlayerActionRequest)
 	if gid < 1 {
 		return nil, fmt.Errorf("PlayerAction called with bad game ID %d", gid)
 	}
-	if aid < 1 {
-		return nil, fmt.Errorf("PlayerAction called with bad action ID %d", gid)
+	if err := uuid.Validate(aid); err != nil {
+		return nil, fmt.Errorf("invalid action ID %q: %w", aid, err)
 	}
 
 	event, err := validateAction(ctx, s.db, gid, aid)
 	if err != nil {
-		return nil, fmt.Errorf("could not validate action %d in game %d: %w", aid, gid, err)
+		return nil, fmt.Errorf("could not validate action %s in game %d: %w", aid, gid, err)
 	}
 
 	updated, err := story.HandleEvent(event)
 	if err != nil {
-		return nil, fmt.Errorf("could not apply action %d in game %d: %w", aid, gid, err)
+		return nil, fmt.Errorf("could not apply action %s in game %d: %w", aid, gid, err)
 	}
 
 	content, err := s.narrator.Event(ctx, event)
 	if err != nil {
-		return nil, fmt.Errorf("could not narrate action %d in game %d: %w", aid, gid, err)
+		return nil, fmt.Errorf("could not narrate action %s in game %d: %w", aid, gid, err)
 	}
 
 	event.GameSnapshot = updated

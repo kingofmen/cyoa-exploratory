@@ -15,7 +15,7 @@ enum RunState {
 
 message Effect {
   string description = 1;
-  int64 new_location_id = 2;
+  string new_location_id = 2;
   string tweak_value = 3;
   int64 tweak_amount = 4;
   RunState new_state = 5;
@@ -33,19 +33,19 @@ message Story {
   int64 id = 1;
   string title = 2;
   string description = 3;
-  int64 start_location_id = 4;
+  string start_location_id = 4;
   repeated TriggerAction events = 5;
 }
 
 message Location {
-  int64 id = 1;
+  string id = 1;
   string title = 2;
   string content = 3;
-  repeated int64 available_actions = 4;
+  repeated string available_actions = 4;
 }
 
 message Action {
-  int64 id = 1;
+  string id = 1;
   string title = 2;
   string description = 3;
   repeated TriggerAction triggers = 4;
@@ -54,7 +54,7 @@ message Action {
 message Playthrough {
   int64 id = 1;
   int64 story_id = 2;
-  int64 location_id = 3;
+  string location_id = 3;
   map<string, int64> values = 4;
   RunState state = 5;
 }

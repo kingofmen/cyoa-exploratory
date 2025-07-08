@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 
 	spb "github.com/kingofmen/cyoa-exploratory/backend/proto"
@@ -21,6 +22,10 @@ func txnError(comment string, txn *sql.Tx, err error) error {
 }
 
 func createLocationImpl(ctx context.Context, db *sql.DB, loc *storypb.Location) (*spb.CreateLocationResponse, error) {
+	lid := loc.GetId()
+	if len(lid) < 1 {
+		lid = uuid.New().String()
+	}
 	blob, err := proto.Marshal(loc)
 	if err != nil {
 		return nil, fmt.Errorf("could not marshal Location: %w", err)
@@ -29,27 +34,21 @@ func createLocationImpl(ctx context.Context, db *sql.DB, loc *storypb.Location) 
 	if err != nil {
 		return nil, fmt.Errorf("could not begin transaction: %w", err)
 	}
-	if _, err := txn.ExecContext(ctx, `INSERT INTO Locations (title, proto) VALUES (?, ?)`, loc.GetTitle(), blob); err != nil {
+	if _, err := txn.ExecContext(ctx, `INSERT INTO Locations (id, title, proto) VALUES (?, ?, ?)`, lid, loc.GetTitle(), blob); err != nil {
 		return nil, txnError("could not insert into Locations", txn, err)
-	}
-
-	var lid int64
-	row := txn.QueryRowContext(ctx, `SELECT LAST_INSERT_ID()`)
-	if err := row.Scan(&lid); err != nil {
-		return nil, txnError("could not read back created location ID", txn, err)
 	}
 
 	if err := txn.Commit(); err != nil {
 		return nil, txnError("could not write to database", txn, err)
 	}
 
-	loc.Id = proto.Int64(lid)
+	loc.Id = proto.String(lid)
 	return &spb.CreateLocationResponse{
 		Location: loc,
 	}, nil
 }
 
-func updateLocationImpl(ctx context.Context, db *sql.DB, id int64, loc *storypb.Location) (*spb.UpdateLocationResponse, error) {
+func updateLocationImpl(ctx context.Context, db *sql.DB, lid string, loc *storypb.Location) (*spb.UpdateLocationResponse, error) {
 	blob, err := proto.Marshal(loc)
 	if err != nil {
 		return nil, fmt.Errorf("could not marshal Location: %w", err)
@@ -58,8 +57,8 @@ func updateLocationImpl(ctx context.Context, db *sql.DB, id int64, loc *storypb.
 	if err != nil {
 		return nil, fmt.Errorf("could not begin transaction: %w", err)
 	}
-	if _, err := txn.ExecContext(ctx, `UPDATE Locations SET title = ?, proto = ? WHERE id = ?`, loc.GetTitle(), blob, id); err != nil {
-		return nil, txnError(fmt.Sprintf("could not update Location %d", id), txn, err)
+	if _, err := txn.ExecContext(ctx, `UPDATE Locations SET title = ?, proto = ? WHERE id = ?`, loc.GetTitle(), blob, lid); err != nil {
+		return nil, txnError(fmt.Sprintf("could not update Location %s", lid), txn, err)
 	}
 
 	if err := txn.Commit(); err != nil {
@@ -68,20 +67,20 @@ func updateLocationImpl(ctx context.Context, db *sql.DB, id int64, loc *storypb.
 
 	return &spb.UpdateLocationResponse{
 		Location: &storypb.Location{
-			Id:      proto.Int64(id),
+			Id:      proto.String(lid),
 			Title:   proto.String(loc.GetTitle()),
 			Content: proto.String(loc.GetContent()),
 		},
 	}, nil
 }
 
-func deleteLocationImpl(ctx context.Context, db *sql.DB, id int64) (*spb.DeleteLocationResponse, error) {
+func deleteLocationImpl(ctx context.Context, db *sql.DB, lid string) (*spb.DeleteLocationResponse, error) {
 	txn, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not begin transaction: %w", err)
 	}
-	if _, err := txn.ExecContext(ctx, `DELETE FROM Locations WHERE id = ?`, id); err != nil {
-		return nil, txnError(fmt.Sprintf("could not delete Location %d", id), txn, err)
+	if _, err := txn.ExecContext(ctx, `DELETE FROM Locations WHERE id = ?`, lid); err != nil {
+		return nil, txnError(fmt.Sprintf("could not delete Location %s", lid), txn, err)
 	}
 
 	if err := txn.Commit(); err != nil {
@@ -91,20 +90,20 @@ func deleteLocationImpl(ctx context.Context, db *sql.DB, id int64) (*spb.DeleteL
 	return &spb.DeleteLocationResponse{}, nil
 }
 
-func getLocationImpl(ctx context.Context, db *sql.DB, id int64) (*spb.GetLocationResponse, error) {
+func getLocationImpl(ctx context.Context, db *sql.DB, lid string) (*spb.GetLocationResponse, error) {
 	txn, err := db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
 	if err != nil {
 		return nil, fmt.Errorf("could not begin transaction: %w", err)
 	}
-	loc, err := loadLocation(ctx, txn, id)
+	loc, err := loadLocation(ctx, txn, lid)
 	if err != nil {
-		return nil, txnError(fmt.Sprintf("could not find location %d", id), txn, err)
+		return nil, txnError(fmt.Sprintf("could not find location %s", lid), txn, err)
 	}
 
 	if err := txn.Commit(); err != nil {
 		return nil, txnError("could not commit query", txn, err)
 	}
-	loc.Id = proto.Int64(id)
+	loc.Id = proto.String(lid)
 	return &spb.GetLocationResponse{
 		Location: loc,
 	}, nil
@@ -123,16 +122,16 @@ func listLocationsImpl(ctx context.Context, db *sql.DB, req *spb.ListLocationsRe
 		return nil, txnError("could not list locations", txn, err)
 	}
 	for rows.Next() {
-		var id int64
+		var lid string
 		blob := []byte{}
-		if err := rows.Scan(&id, &blob); err != nil {
+		if err := rows.Scan(&lid, &blob); err != nil {
 			return nil, txnError("error scanning location", txn, err)
 		}
 		loc := &storypb.Location{}
 		if err := proto.Unmarshal(blob, loc); err != nil {
-			return nil, txnError(fmt.Sprintf("could not unmarshal location %d", id), txn, err)
+			return nil, txnError(fmt.Sprintf("could not unmarshal location %s", lid), txn, err)
 		}
-		loc.Id = proto.Int64(id)
+		loc.Id = proto.String(lid)
 		resp.Locations = append(resp.Locations, loc)
 	}
 	if err := txn.Commit(); err != nil {
@@ -244,6 +243,10 @@ func listStoriesImpl(ctx context.Context, db *sql.DB, req *spb.ListStoriesReques
 }
 
 func createActionImpl(ctx context.Context, db *sql.DB, act *storypb.Action) (*spb.CreateActionResponse, error) {
+	aid := act.GetId()
+	if len(aid) < 1 {
+		aid = uuid.New().String()
+	}
 	blob, err := proto.Marshal(act)
 	if err != nil {
 		return nil, fmt.Errorf("could not marshal Action: %v", err)
@@ -253,19 +256,14 @@ func createActionImpl(ctx context.Context, db *sql.DB, act *storypb.Action) (*sp
 		return nil, fmt.Errorf("could not begin transaction: %w", err)
 	}
 
-	if _, err := txn.ExecContext(ctx, `INSERT INTO Actions (proto) VALUES (?)`, blob); err != nil {
+	if _, err := txn.ExecContext(ctx, `INSERT INTO Actions (id, proto) VALUES (?, ?)`, aid, blob); err != nil {
 		return nil, txnError("could not insert into Actions", txn, err)
-	}
-	var aid int64
-	row := txn.QueryRowContext(ctx, `SELECT LAST_INSERT_ID()`)
-	if err := row.Scan(&aid); err != nil {
-		return nil, txnError("could not read back created ID", txn, err)
 	}
 	if err := txn.Commit(); err != nil {
 		return nil, txnError("could not write to database", txn, err)
 	}
 
-	act.Id = proto.Int64(aid)
+	act.Id = proto.String(aid)
 	return &spb.CreateActionResponse{
 		Action: act,
 	}, nil
@@ -292,8 +290,8 @@ func createGameImpl(ctx context.Context, db *sql.DB, sid int64) (*spb.CreateGame
 	ngame := &storypb.Playthrough{
 		StoryId: proto.Int64(str.GetId()),
 	}
-	if loc := str.GetStartLocationId(); loc > 0 {
-		ngame.LocationId = proto.Int64(loc)
+	if lid := str.GetStartLocationId(); len(lid) > 0 {
+		ngame.LocationId = proto.String(lid)
 	}
 	// TODO: Set starting values from Story object.
 	ngame.State = storypb.RunState_RS_ACTIVE.Enum()
@@ -320,7 +318,7 @@ func createGameImpl(ctx context.Context, db *sql.DB, sid int64) (*spb.CreateGame
 
 // validateAction loads the action, location, game, and story for a player input.
 // It is read-only.
-func validateAction(ctx context.Context, db *sql.DB, gid, aid int64) (*storypb.GameEvent, error) {
+func validateAction(ctx context.Context, db *sql.DB, gid int64, aid string) (*storypb.GameEvent, error) {
 	txn, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not begin transaction: %w", err)
@@ -336,12 +334,12 @@ func validateAction(ctx context.Context, db *sql.DB, gid, aid int64) (*storypb.G
 	}
 	act, err := loadAction(ctx, txn, aid)
 	if err != nil {
-		return nil, txnError(fmt.Sprintf("could not find action %d for playthrough %d of story %d", aid, gid, sid), txn, err)
+		return nil, txnError(fmt.Sprintf("could not find action %s for playthrough %d of story %d", aid, gid, sid), txn, err)
 	}
 	lid := game.GetLocationId()
 	loc, err := loadLocation(ctx, txn, lid)
 	if err != nil {
-		return nil, txnError(fmt.Sprintf("could not find location %d for playthrough %d of story %d", lid, gid, sid), txn, err)
+		return nil, txnError(fmt.Sprintf("could not find location %s for playthrough %d of story %d", lid, gid, sid), txn, err)
 	}
 	if err := txn.Commit(); err != nil {
 		return nil, txnError("could not write to database", txn, err)
@@ -362,10 +360,10 @@ func writeAction(ctx context.Context, db *sql.DB, event *storypb.GameEvent) erro
 	txn, err := db.BeginTx(ctx, nil)
 	blob, err := proto.Marshal(game)
 	if err != nil {
-		return txnError(fmt.Sprintf("could not marshal updated playthrough %d of story %d after action %d", gid, sid, aid), txn, err)
+		return txnError(fmt.Sprintf("could not marshal updated playthrough %d of story %d after action %s", gid, sid, aid), txn, err)
 	}
 	if _, err := txn.ExecContext(ctx, `UPDATE Playthroughs SET proto = ?, narration = ? WHERE id = ?`, blob, event.GetNarration(), gid); err != nil {
-		return txnError(fmt.Sprintf("could not update playthrough %d of story %d after action %d", gid, sid, aid), txn, err)
+		return txnError(fmt.Sprintf("could not update playthrough %d of story %d after action %s", gid, sid, aid), txn, err)
 	}
 	if err := txn.Commit(); err != nil {
 		return txnError("could not write to database", txn, err)

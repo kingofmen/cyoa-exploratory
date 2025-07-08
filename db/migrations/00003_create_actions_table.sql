@@ -1,7 +1,7 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TABLE Actions (
-    id SERIAL PRIMARY KEY,
+    id CHAR(36) PRIMARY KEY,
     proto BLOB
 );
 -- +goose StatementEnd

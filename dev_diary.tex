@@ -83,7 +83,7 @@
   and description and can't even load a specific story from previous
   sessions, but now that I have the framework and moderately
   understand the build pipeline I can do full-stack work.
-\item[July 7th] Some time spent getting the new build steps to work on
+\item[July 6th] Some time spent getting the new build steps to work on
   Cloud, and adding a frontpage with a list of stories and
   Create/Edit/Delete links. Today I realized that the story proto
   library, which works excellently for the backend, is not very
@@ -94,5 +94,10 @@
   proto which just rolls up a number of Locations and other
   auxilia. That should be relatively easy to translate into JSON and
   Vue.
+\item[July 7th] Further data-model work: Migrated to UUIDs for
+  locations and actions, which have to be created client-side. Left
+  stories and playthroughs, whose creation plausibly involves a server
+  roundtrip anyway, as serial integers. I am climbing this here
+  learning curve for web apps, yep.
 \end{itemize}
 

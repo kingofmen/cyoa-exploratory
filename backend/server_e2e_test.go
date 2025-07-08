@@ -9,6 +9,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/uuid"
 	"github.com/kingofmen/cyoa-exploratory/narrate"
 	"github.com/pressly/goose/v3"
 	"github.com/testcontainers/testcontainers-go"
@@ -72,6 +73,10 @@ func TestMain(m *testing.M) {
 func TestStoryE2E(t *testing.T) {
 	ctx := context.Background()
 	srv := New(db).WithNarrator(narrate.NewDebug())
+	uuid1 := uuid.New().String()
+	uuid2 := uuid.New().String()
+	uuid3 := uuid.New().String()
+	uuid4 := uuid.New().String()
 	csresp, err := srv.UpdateStory(ctx, &spb.UpdateStoryRequest{
 		Story: &storypb.Story{
 			Title:       proto.String("E2E test story"),
@@ -122,42 +127,42 @@ func TestStoryE2E(t *testing.T) {
 
 	clresp1, err := srv.CreateLocation(ctx, &spb.CreateLocationRequest{
 		Location: &storypb.Location{
+			Id:               proto.String(uuid1),
 			Title:            proto.String("Choose Character"),
 			Content:          proto.String("Choose which character to play as."),
-			AvailableActions: []int64{1, 2},
+			AvailableActions: []string{uuid1, uuid2},
 		},
 	})
 	if err != nil {
 		t.Fatalf("CreateLocation(1) => %v, want nil", err)
 	}
 	exploc := &storypb.Location{
-		Id:               proto.Int64(1),
+		Id:               proto.String(uuid1),
 		Title:            proto.String("Choose Character"),
 		Content:          proto.String("Choose which character to play as."),
-		AvailableActions: []int64{1, 2},
+		AvailableActions: []string{uuid1, uuid2},
 	}
 	if diff := cmp.Diff(clresp1.GetLocation(), exploc, protocmp.Transform()); diff != "" {
 		t.Errorf("After CreateLocation(1): %s, want %s, diff %s", prototext.Format(clresp1.GetLocation()), prototext.Format(exploc), diff)
 	}
 
-	loc1id := clresp1.GetLocation().GetId()
 	clresp2, err := srv.CreateLocation(ctx, &spb.CreateLocationRequest{
 		Location: &storypb.Location{
+			Id:               proto.String(uuid2),
 			Title:            proto.String("Ogre Encounter"),
 			Content:          proto.String("Either fight the ogre or attempt to sneak past it."),
-			AvailableActions: []int64{3, 4},
+			AvailableActions: []string{uuid3, uuid4},
 		},
 	})
 	if err != nil {
 		t.Fatalf("CreateLocation(2) => %v, want nil", err)
 	}
-	loc2id := clresp2.GetLocation().GetId()
 
 	exploc = &storypb.Location{
-		Id:               proto.Int64(2),
+		Id:               proto.String(uuid2),
 		Title:            proto.String("Ogre Encounter"),
 		Content:          proto.String("Either fight the ogre or attempt to sneak past it."),
-		AvailableActions: []int64{3, 4},
+		AvailableActions: []string{uuid3, uuid4},
 	}
 	if diff := cmp.Diff(clresp2.GetLocation(), exploc, protocmp.Transform()); diff != "" {
 		t.Errorf("After CreateLocation(2): %s, want %s, diff %s", prototext.Format(clresp2.GetLocation()), prototext.Format(exploc), diff)
@@ -169,7 +174,7 @@ func TestStoryE2E(t *testing.T) {
 	usresp, err := srv.UpdateStory(ctx, &spb.UpdateStoryRequest{
 		Story: &storypb.Story{
 			Id:              proto.Int64(stid),
-			StartLocationId: proto.Int64(loc1id),
+			StartLocationId: proto.String(uuid1),
 		},
 	})
 	if err != nil {
@@ -181,20 +186,21 @@ func TestStoryE2E(t *testing.T) {
 		Id:              proto.Int64(1),
 		Title:           proto.String("E2E test story"),
 		Description:     proto.String("Story for end-to-end testing"),
-		StartLocationId: proto.Int64(1),
+		StartLocationId: proto.String(uuid1),
 	}
 	if diff := cmp.Diff(got, want, protocmp.Transform(), protocmp.IgnoreFields(&storypb.Story{}, "events")); diff != "" {
 		t.Errorf("After UpdateStory: %s, want %s, diff %s (%s)", prototext.Format(got), prototext.Format(want), diff, prototext.Format(clresp1))
 	}
 
 	charFighter := &storypb.Action{
+		Id:          proto.String(uuid1),
 		Title:       proto.String("Fighter"),
 		Description: proto.String("A mighty warrior!"),
 		Triggers: []*storypb.TriggerAction{
 			&storypb.TriggerAction{
 				Effects: []*storypb.Effect{
 					&storypb.Effect{
-						NewLocationId: proto.Int64(loc2id),
+						NewLocationId: proto.String(uuid2),
 						TweakValue:    proto.String("Strength"),
 						TweakAmount:   proto.Int64(5),
 					},
@@ -203,13 +209,14 @@ func TestStoryE2E(t *testing.T) {
 		},
 	}
 	charThief := &storypb.Action{
+		Id:          proto.String(uuid2),
 		Title:       proto.String("Rogue"),
 		Description: proto.String("A cunning thief!"),
 		Triggers: []*storypb.TriggerAction{
 			&storypb.TriggerAction{
 				Effects: []*storypb.Effect{
 					&storypb.Effect{
-						NewLocationId: proto.Int64(loc2id),
+						NewLocationId: proto.String(uuid2),
 						TweakValue:    proto.String("Dexterity"),
 						TweakAmount:   proto.Int64(5),
 					},
@@ -218,6 +225,7 @@ func TestStoryE2E(t *testing.T) {
 		},
 	}
 	fightOgre := &storypb.Action{
+		Id:          proto.String(uuid3),
 		Title:       proto.String("Attack!"),
 		Description: proto.String("Fight the ogre with your sword."),
 		Triggers: []*storypb.TriggerAction{
@@ -250,6 +258,7 @@ func TestStoryE2E(t *testing.T) {
 		},
 	}
 	sneakOgre := &storypb.Action{
+		Id:          proto.String(uuid4),
 		Title:       proto.String("Slow and sneaky wins the race..."),
 		Description: proto.String("Sneak past the ogre."),
 		Triggers: []*storypb.TriggerAction{
@@ -295,21 +304,21 @@ func TestStoryE2E(t *testing.T) {
 
 	cases := []struct {
 		desc      string
-		actions   []int64
+		actions   []string
 		expect    []*storypb.Playthrough
 		narrative []string
 	}{
 		{
 			desc:    "Fighter, attack",
-			actions: []int64{charFighter.GetId(), fightOgre.GetId()},
+			actions: []string{charFighter.GetId(), fightOgre.GetId()},
 			expect: []*storypb.Playthrough{
 				&storypb.Playthrough{
-					LocationId: proto.Int64(2),
+					LocationId: proto.String(uuid2),
 					Values:     map[string]int64{"Strength": 5},
 					State:      storypb.RunState_RS_ACTIVE.Enum(),
 				},
 				&storypb.Playthrough{
-					LocationId: proto.Int64(2),
+					LocationId: proto.String(uuid2),
 					Values:     map[string]int64{"Strength": 5, "ogre_defeated": 1},
 					State:      storypb.RunState_RS_COMPLETE.Enum(),
 				},
@@ -321,15 +330,15 @@ func TestStoryE2E(t *testing.T) {
 		},
 		{
 			desc:    "Rogue, attack",
-			actions: []int64{charThief.GetId(), fightOgre.GetId()},
+			actions: []string{charThief.GetId(), fightOgre.GetId()},
 			expect: []*storypb.Playthrough{
 				&storypb.Playthrough{
-					LocationId: proto.Int64(2),
+					LocationId: proto.String(uuid2),
 					Values:     map[string]int64{"Dexterity": 5},
 					State:      storypb.RunState_RS_ACTIVE.Enum(),
 				},
 				&storypb.Playthrough{
-					LocationId: proto.Int64(2),
+					LocationId: proto.String(uuid2),
 					Values:     map[string]int64{"Dexterity": 5, "player_killed": 1},
 					State:      storypb.RunState_RS_COMPLETE.Enum(),
 				},
@@ -341,15 +350,15 @@ func TestStoryE2E(t *testing.T) {
 		},
 		{
 			desc:    "Fighter, sneak",
-			actions: []int64{charFighter.GetId(), sneakOgre.GetId()},
+			actions: []string{charFighter.GetId(), sneakOgre.GetId()},
 			expect: []*storypb.Playthrough{
 				&storypb.Playthrough{
-					LocationId: proto.Int64(2),
+					LocationId: proto.String(uuid2),
 					Values:     map[string]int64{"Strength": 5},
 					State:      storypb.RunState_RS_ACTIVE.Enum(),
 				},
 				&storypb.Playthrough{
-					LocationId: proto.Int64(2),
+					LocationId: proto.String(uuid2),
 					Values:     map[string]int64{"Strength": 5, "player_killed": 1},
 					State:      storypb.RunState_RS_COMPLETE.Enum(),
 				},
@@ -361,15 +370,15 @@ func TestStoryE2E(t *testing.T) {
 		},
 		{
 			desc:    "Rogue, sneak",
-			actions: []int64{charThief.GetId(), sneakOgre.GetId()},
+			actions: []string{charThief.GetId(), sneakOgre.GetId()},
 			expect: []*storypb.Playthrough{
 				&storypb.Playthrough{
-					LocationId: proto.Int64(2),
+					LocationId: proto.String(uuid2),
 					Values:     map[string]int64{"Dexterity": 5},
 					State:      storypb.RunState_RS_ACTIVE.Enum(),
 				},
 				&storypb.Playthrough{
-					LocationId: proto.Int64(2),
+					LocationId: proto.String(uuid2),
 					Values:     map[string]int64{"Dexterity": 5, "ogre_defeated": 1},
 					State:      storypb.RunState_RS_COMPLETE.Enum(),
 				},
@@ -397,7 +406,7 @@ func TestStoryE2E(t *testing.T) {
 			for idx, actid := range cc.actions {
 				resp, err := srv.PlayerAction(ctx, &spb.PlayerActionRequest{
 					GameId:   proto.Int64(gid),
-					ActionId: proto.Int64(actid),
+					ActionId: proto.String(actid),
 				})
 				if err != nil {
 					t.Errorf("%s: Action %d had unexpected error %v", cc.desc, idx, err)

@@ -39,7 +39,7 @@ func loadGame(ctx context.Context, txn *sql.Tx, gid int64) (*storypb.Playthrough
 	return game, text.String, nil
 }
 
-func loadAction(ctx context.Context, txn *sql.Tx, aid int64) (*storypb.Action, error) {
+func loadAction(ctx context.Context, txn *sql.Tx, aid string) (*storypb.Action, error) {
 	row := txn.QueryRowContext(ctx, `SELECT * FROM Actions AS a WHERE a.id = ?`, aid)
 	blob := []byte{}
 	if err := row.Scan(&aid, &blob); err != nil {
@@ -47,13 +47,13 @@ func loadAction(ctx context.Context, txn *sql.Tx, aid int64) (*storypb.Action, e
 	}
 	action := &storypb.Action{}
 	if err := proto.Unmarshal(blob, action); err != nil {
-		return nil, fmt.Errorf("could not unmarshal action %d: %w", aid, err)
+		return nil, fmt.Errorf("could not unmarshal action %s: %w", aid, err)
 	}
-	action.Id = proto.Int64(aid)
+	action.Id = proto.String(aid)
 	return action, nil
 }
 
-func loadLocation(ctx context.Context, txn *sql.Tx, lid int64) (*storypb.Location, error) {
+func loadLocation(ctx context.Context, txn *sql.Tx, lid string) (*storypb.Location, error) {
 	row := txn.QueryRowContext(ctx, `SELECT l.id, l.proto FROM Locations AS l WHERE l.id = ?`, lid)
 	blob := []byte{}
 	if err := row.Scan(&lid, &blob); err != nil {
@@ -61,8 +61,8 @@ func loadLocation(ctx context.Context, txn *sql.Tx, lid int64) (*storypb.Locatio
 	}
 	loc := &storypb.Location{}
 	if err := proto.Unmarshal(blob, loc); err != nil {
-		return nil, fmt.Errorf("could not unmarshal location %d: %w", lid, err)
+		return nil, fmt.Errorf("could not unmarshal location %s: %w", lid, err)
 	}
-	loc.Id = proto.Int64(lid)
+	loc.Id = proto.String(lid)
 	return loc, nil
 }
