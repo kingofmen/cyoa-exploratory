@@ -21,6 +21,9 @@
                 class="focus:ring-indigo-500 focus:border-indigo-500"
             ></textarea>
         </div>
+        <div v-if="startLocation" class="mb-6 text-left">
+            <h4 class="text-lg font-medium text-gray-800 mb-2">Starting Location: {{ startLocation.title }}</h4>
+        </div>
         <div class="mt-6">
             <h3 class="text-xl font-semibold text-gray-800 mb-3">Locations</h3>
             <button
@@ -55,6 +58,12 @@
                     >
                         Edit
                     </button>
+                    <button
+                        @click="setStartingLocation(location)"
+                        class="ml-2 px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 text-sm"
+                    >
+                        Set as Start
+                    </button>
                 </li>
             </ul>
             <p v-else class="text-gray-500 mb-4">No locations created yet.</p>
@@ -75,8 +84,9 @@ export default {
         const initialStory = window.initialStoryData || {
             title: 'New Story Title',
             description: 'Story introduction.',
+	    startLocationId: '',
         };
-	const initialContent = window.initialContentData || {
+	let initialContent = window.initialContentData || {
                 locations: [],
 	}
 
@@ -85,14 +95,24 @@ export default {
             initialContent.locations = [];
         }
 
+	let sloc = null;
+	for (const loc of initialContent.locations) {
+	  if (loc.id == initialStory.startLocationId) {
+	    sloc = loc
+	    break
+	  }
+	}
+
         return {
             story: {
 	        id: initialStory.id,
                 title: initialStory.title,
                 description: initialStory.description,
+		startLocationId: initialStory.startLocationId,
             },
             content: initialContent,
             currentLocation: initialContent.locations.length > 0 ? initialContent.locations[0] : null,
+	    startLocation: sloc,
             message: '',
             messageType: ''
         };
@@ -111,6 +131,10 @@ export default {
         },
         editLocation(location) {
             this.currentLocation = location;
+        },
+        setStartingLocation(location) {
+            this.story.startLocationId = location.id;
+	    this.startLocation = location
         },
         async saveChanges() {
             this.message = 'Saving...';
