@@ -38,6 +38,13 @@
                     placeholder="Enter location title"
                     class="focus:ring-indigo-500 focus:border-indigo-500 w-full"
                 />
+                <textarea
+                    :id="'locationContent-' + currentLocation.id"
+                    v-model="currentLocation.content"
+                    placeholder="Enter location description"
+                    rows="4"
+                    class="focus:ring-indigo-500 focus:border-indigo-500 w-full"
+                ></textarea>
             </div>
             <ul v-if="content.locations && content.locations.length" class="list-disc pl-5 mb-4">
                 <li v-for="location in content.locations" :key="location.id" class="mb-2 flex justify-between items-center">
@@ -94,7 +101,8 @@ export default {
         createNewLocation() {
             const newLocation = {
                 id: crypto.randomUUID(),
-                title: "Default Location title"
+                title: "Default Location title",
+		content: "Description goes here",
             };
             this.content.locations.push(newLocation);
             this.currentLocation = newLocation; // Select the new location for editing
