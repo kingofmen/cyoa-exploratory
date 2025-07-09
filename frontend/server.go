@@ -2,7 +2,9 @@
 package server
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -231,6 +233,14 @@ func (h *Handler) CreateOrUpdateStoryHandler(w http.ResponseWriter, req *http.Re
 	}
 	updReq := &spb.UpdateStoryRequest{}
 	if err := protojson.Unmarshal(bts, updReq); err != nil {
+		log.Printf("Failed to parse request: %v", err)
+		var pjs bytes.Buffer
+		if err := json.Indent(&pjs, bts, "", "    "); err != nil {
+			log.Printf("Couldn't pretty-print object: %v", err)
+			log.Printf("Raw object: %b", bts)
+		} else {
+			log.Printf("JSON object: %s", string(pjs.Bytes()))
+		}
 		http.Error(w, fmt.Sprintf("could not parse request object: %v", err), http.StatusBadRequest)
 		return
 	}
