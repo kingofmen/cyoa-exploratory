@@ -66,3 +66,31 @@ func loadLocation(ctx context.Context, txn *sql.Tx, lid string) (*storypb.Locati
 	loc.Id = proto.String(lid)
 	return loc, nil
 }
+
+func loadStoryLocations(ctx context.Context, txn *sql.Tx, sid int64) ([]*storypb.Location, error) {
+	rows, err := txn.QueryContext(ctx, `SELECT l.id, l.proto
+                                      FROM StoryLocations AS sl
+                                      JOIN Locations AS l
+                                      ON sl.location_id = l.id
+                                      WHERE sl.story_id = ?`,
+		sid)
+	if err != nil {
+		return nil, fmt.Errorf("story %d locations query failed: %w", sid, err)
+	}
+	ret := make([]*storypb.Location, 0, 10)
+	for rows.Next() {
+		var lid string
+		blob := []byte{}
+		if err := rows.Scan(&lid, &blob); err != nil {
+			return nil, fmt.Errorf("error scanning location for story %d: %w", sid, err)
+		}
+		loc := &storypb.Location{}
+		if err := proto.Unmarshal(blob, loc); err != nil {
+			return nil, fmt.Errorf("could not unmarshal location %s for story %d: %w", lid, sid, err)
+		}
+		loc.Id = proto.String(lid)
+		ret = append(ret, loc)
+
+	}
+	return ret, nil
+}

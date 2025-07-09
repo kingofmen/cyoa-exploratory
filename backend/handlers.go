@@ -140,23 +140,34 @@ func listLocationsImpl(ctx context.Context, db *sql.DB, req *spb.ListLocationsRe
 	return resp, nil
 }
 
-func getStoryImpl(ctx context.Context, db *sql.DB, id int64) (*spb.GetStoryResponse, error) {
+func getStoryImpl(ctx context.Context, db *sql.DB, sid int64, view spb.StoryView) (*spb.GetStoryResponse, error) {
 	txn, err := db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
 	if err != nil {
 		return nil, fmt.Errorf("could not begin transaction: %w", err)
 	}
-	str, err := loadStory(ctx, txn, id)
+	str, err := loadStory(ctx, txn, sid)
 	if err != nil {
-		return nil, txnError(fmt.Sprintf("could not find story %d", id), txn, err)
+		return nil, txnError(fmt.Sprintf("could not find story %d", sid), txn, err)
+	}
+	resp := &spb.GetStoryResponse{
+		Story: str,
+	}
+
+	if view == spb.StoryView_VIEW_CONTENT {
+		locs, err := loadStoryLocations(ctx, txn, sid)
+		if err != nil {
+			return nil, txnError(fmt.Sprintf("could not load story %d locations", sid), txn, err)
+		}
+		resp.Content = &spb.StoryContent{
+			Locations: locs,
+		}
 	}
 
 	if err := txn.Commit(); err != nil {
 		return nil, txnError("could not commit query", txn, err)
 	}
-	str.Id = proto.Int64(id)
-	return &spb.GetStoryResponse{
-		Story: str,
-	}, nil
+	str.Id = proto.Int64(sid)
+	return resp, nil
 }
 
 func deleteStoryImpl(ctx context.Context, db *sql.DB, id int64) (*spb.DeleteStoryResponse, error) {

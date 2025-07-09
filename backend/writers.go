@@ -24,3 +24,38 @@ func createStory(ctx context.Context, txn *sql.Tx, str *storypb.Story) (*storypb
 		Id: proto.Int64(sid),
 	}, nil
 }
+
+func createOrUpdateLocation(ctx context.Context, txn *sql.Tx, lid string, loc *storypb.Location) (*storypb.Location, error) {
+	blob, err := proto.Marshal(loc)
+	if err != nil {
+		return nil, fmt.Errorf("could not marshal updated location %s (%s): %w", lid, loc.GetTitle(), err)
+	}
+	if _, err := txn.ExecContext(ctx, `INSERT INTO Locations (id, title, proto)
+                                     VALUES (?, ?, ?)
+                                     ON DUPLICATE KEY UPDATE title = VALUES(title), proto = VALUES(proto);
+                                    `, lid, loc.GetTitle(), blob); err != nil {
+		return nil, fmt.Errorf("could not insert into Locations: %w", err)
+	}
+
+	loc.Id = proto.String(lid)
+	return loc, nil
+}
+
+func updateStoryLocationsTable(ctx context.Context, txn *sql.Tx, sid int64, locIds []string) error {
+	_, err := txn.ExecContext(ctx, `DELETE FROM StoryLocations WHERE story_id = ?`, sid)
+	if err != nil {
+		return fmt.Errorf("failed to delete existing story locations: %w", err)
+	}
+	insrt, err := txn.PrepareContext(ctx, `INSERT INTO StoryLocations (story_id, location_id) VALUES (?, ?)`)
+	if err != nil {
+		return fmt.Errorf("failed to prepare insert statement: %w", err)
+	}
+	defer insrt.Close()
+	for _, lid := range locIds {
+		_, err := insrt.ExecContext(ctx, sid, lid)
+		if err != nil {
+			return fmt.Errorf("failed to insert story-location association (%s, %s): %w", sid, lid, err)
+		}
+	}
+	return nil
+}

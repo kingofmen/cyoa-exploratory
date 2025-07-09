@@ -5,6 +5,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/google/uuid"
@@ -117,6 +119,22 @@ func (s *Server) UpdateStory(ctx context.Context, req *spb.UpdateStoryRequest) (
 		return nil, txnError("could not update story", txn, err)
 	}
 
+	content := req.GetContent()
+	locs := content.GetLocations()
+	locIds := make(map[string]bool)
+	for idx, loc := range locs {
+		locs[idx], err = createOrUpdateLocation(ctx, txn, loc.GetId(), loc)
+		if err != nil {
+			return nil, txnError(fmt.Sprintf("could not update location %q", loc.GetTitle()), txn, err)
+		}
+		locIds[locs[idx].GetId()] = true
+	}
+
+	if err := updateStoryLocationsTable(ctx, txn, resp.GetStory().GetId(), slices.Collect(maps.Keys(locIds))); err != nil {
+		return nil, txnError("could not update story-location relationships", txn, err)
+	}
+
+	resp.Content = content
 	if err := txn.Commit(); err != nil {
 		return nil, txnError("could not commit to database", txn, err)
 	}
@@ -137,7 +155,7 @@ func (s *Server) GetStory(ctx context.Context, req *spb.GetStoryRequest) (*spb.G
 	if sid < 1 {
 		return nil, fmt.Errorf("GetStory called with invalid story ID %d", sid)
 	}
-	return getStoryImpl(ctx, s.db, sid)
+	return getStoryImpl(ctx, s.db, sid, req.GetView())
 }
 
 func (s *Server) ListStories(ctx context.Context, req *spb.ListStoriesRequest) (*spb.ListStoriesResponse, error) {

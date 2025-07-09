@@ -37,12 +37,13 @@ const (
 
 // indexData holds data for the front page.
 type indexData struct {
-	Timestamp        string
-	Stories          []*storypb.Story
-	CurrentStoryJSON string
-	EditStoryURI     string
-	DeleteStoryURI   string
-	StoryIdKey       string
+	Timestamp          string
+	Stories            []*storypb.Story
+	CurrentStoryJSON   string
+	CurrentContentJSON string
+	EditStoryURI       string
+	DeleteStoryURI     string
+	StoryIdKey         string
 
 	CreateLocTitle   string
 	CreateLocContent string
@@ -83,7 +84,7 @@ func makeIndexData() indexData {
 	}
 }
 
-// ServeHTTP writes a response to the request into the writer.
+// ServeHTTP serves the front page.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	strResp, err := h.client.ListStories(req.Context(), &spb.ListStoriesRequest{})
 	if err != nil {
@@ -205,10 +206,16 @@ func (h *Handler) VueExperimentalHandler(w http.ResponseWriter, req *http.Reques
 		}
 		bts, err := protojson.Marshal(resp.GetStory())
 		if err != nil {
-			http.Error(w, fmt.Sprintf("error marshaling proto: %v", err), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("error marshaling story proto: %v", err), http.StatusInternalServerError)
 			return
 		}
 		data.CurrentStoryJSON = string(bts)
+		bts, err = protojson.Marshal(resp.GetContent())
+		if err != nil {
+			http.Error(w, fmt.Sprintf("error marshaling content proto: %v", err), http.StatusInternalServerError)
+			return
+		}
+		data.CurrentContentJSON = string(bts)
 	}
 	if err := h.vuetmpl.Execute(w, data); err != nil {
 		log.Printf("Template execution error: %v", err)
@@ -222,17 +229,13 @@ func (h *Handler) CreateOrUpdateStoryHandler(w http.ResponseWriter, req *http.Re
 		http.Error(w, fmt.Sprintf("could not read request body: %v", err), http.StatusBadRequest)
 		return
 	}
-	str := &storypb.Story{}
-	if err := protojson.Unmarshal(bts, str); err != nil {
-		http.Error(w, fmt.Sprintf("could not parse Story object: %v", err), http.StatusBadRequest)
+	updReq := &spb.UpdateStoryRequest{}
+	if err := protojson.Unmarshal(bts, updReq); err != nil {
+		http.Error(w, fmt.Sprintf("could not parse request object: %v", err), http.StatusBadRequest)
 		return
 	}
 
 	ctx := req.Context()
-	updReq := &spb.UpdateStoryRequest{
-		Story: str,
-	}
-
 	updResp, err := h.client.UpdateStory(ctx, updReq)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("backend error: %v", err), http.StatusInternalServerError)

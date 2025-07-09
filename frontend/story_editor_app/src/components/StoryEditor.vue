@@ -113,7 +113,10 @@ export default {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(this.story),
+                    body: JSON.stringify({
+		      story: this.story,
+		      content: this.content,
+		    }),
                 });
 
                 if (response.ok) {
@@ -122,6 +125,7 @@ export default {
                     this.message = 'Changes saved successfully!';
                     this.messageType = 'success';
 		    this.story = result.story
+		    this.content = result.content
                 } else {
                     const errorText = await response.text();
                     console.error('Failed to save changes:', response.status, errorText);
