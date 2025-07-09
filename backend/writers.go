@@ -54,7 +54,7 @@ func updateStoryLocationsTable(ctx context.Context, txn *sql.Tx, sid int64, locI
 	for _, lid := range locIds {
 		_, err := insrt.ExecContext(ctx, sid, lid)
 		if err != nil {
-			return fmt.Errorf("failed to insert story-location association (%s, %s): %w", sid, lid, err)
+			return fmt.Errorf("failed to insert story-location association (%d, %s): %w", sid, lid, err)
 		}
 	}
 	return nil

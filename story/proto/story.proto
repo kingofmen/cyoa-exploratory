@@ -41,7 +41,7 @@ message Location {
   string id = 1;
   string title = 2;
   string content = 3;
-  repeated string available_actions = 4;
+  repeated string available_action_ids = 4;
 }
 
 message Action {

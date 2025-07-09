@@ -42,7 +42,7 @@ func (g *gameState) ListScopes() []string {
 
 // allowed returns true if the action is in the location's available list.
 func allowed(act *storypb.Action, loc *storypb.Location) bool {
-	for _, av := range loc.GetAvailableActions() {
+	for _, av := range loc.GetAvailableActionIds() {
 		if av == act.GetId() {
 			return true
 		}

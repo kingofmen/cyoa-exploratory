@@ -127,20 +127,20 @@ func TestStoryE2E(t *testing.T) {
 
 	clresp1, err := srv.CreateLocation(ctx, &spb.CreateLocationRequest{
 		Location: &storypb.Location{
-			Id:               proto.String(uuid1),
-			Title:            proto.String("Choose Character"),
-			Content:          proto.String("Choose which character to play as."),
-			AvailableActions: []string{uuid1, uuid2},
+			Id:                 proto.String(uuid1),
+			Title:              proto.String("Choose Character"),
+			Content:            proto.String("Choose which character to play as."),
+			AvailableActionIds: []string{uuid1, uuid2},
 		},
 	})
 	if err != nil {
 		t.Fatalf("CreateLocation(1) => %v, want nil", err)
 	}
 	exploc := &storypb.Location{
-		Id:               proto.String(uuid1),
-		Title:            proto.String("Choose Character"),
-		Content:          proto.String("Choose which character to play as."),
-		AvailableActions: []string{uuid1, uuid2},
+		Id:                 proto.String(uuid1),
+		Title:              proto.String("Choose Character"),
+		Content:            proto.String("Choose which character to play as."),
+		AvailableActionIds: []string{uuid1, uuid2},
 	}
 	if diff := cmp.Diff(clresp1.GetLocation(), exploc, protocmp.Transform()); diff != "" {
 		t.Errorf("After CreateLocation(1): %s, want %s, diff %s", prototext.Format(clresp1.GetLocation()), prototext.Format(exploc), diff)
@@ -148,10 +148,10 @@ func TestStoryE2E(t *testing.T) {
 
 	clresp2, err := srv.CreateLocation(ctx, &spb.CreateLocationRequest{
 		Location: &storypb.Location{
-			Id:               proto.String(uuid2),
-			Title:            proto.String("Ogre Encounter"),
-			Content:          proto.String("Either fight the ogre or attempt to sneak past it."),
-			AvailableActions: []string{uuid3, uuid4},
+			Id:                 proto.String(uuid2),
+			Title:              proto.String("Ogre Encounter"),
+			Content:            proto.String("Either fight the ogre or attempt to sneak past it."),
+			AvailableActionIds: []string{uuid3, uuid4},
 		},
 	})
 	if err != nil {
@@ -159,10 +159,10 @@ func TestStoryE2E(t *testing.T) {
 	}
 
 	exploc = &storypb.Location{
-		Id:               proto.String(uuid2),
-		Title:            proto.String("Ogre Encounter"),
-		Content:          proto.String("Either fight the ogre or attempt to sneak past it."),
-		AvailableActions: []string{uuid3, uuid4},
+		Id:                 proto.String(uuid2),
+		Title:              proto.String("Ogre Encounter"),
+		Content:            proto.String("Either fight the ogre or attempt to sneak past it."),
+		AvailableActionIds: []string{uuid3, uuid4},
 	}
 	if diff := cmp.Diff(clresp2.GetLocation(), exploc, protocmp.Transform()); diff != "" {
 		t.Errorf("After CreateLocation(2): %s, want %s, diff %s", prototext.Format(clresp2.GetLocation()), prototext.Format(exploc), diff)
