@@ -38,7 +38,7 @@
             </div>
             <ul v-if="storyEvents && storyEvents.length" class="list-disc pl-5 mb-4">
                 <li v-for="(event, index) in storyEvents" :key="event.id || index" class="mb-2 flex justify-between items-center">
-                    <span>Event {{ index + 1 }} <span v-if="event.condition && event.condition.comp" class="text-xs text-gray-500 ml-2">({{event.condition.comp.key_one}} {{event.condition.comp.operation}} {{event.condition.comp.key_two}})</span></span>
+                    <span>Event {{ index + 1 }} <span v-if="event.condition && event.condition.comp" class="text-xs text-gray-500 ml-2">({{event.condition.comp.keyOne}} {{event.condition.comp.operation}} {{event.condition.comp.keyTwo}})</span></span>
                     <button
                         @click="editEvent(event)"
                         class="ml-2 px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 text-sm"
@@ -156,7 +156,7 @@ export default {
                 id: crypto.randomUUID(), // Temporary frontend ID
                 condition: null, // Will be initialized in PredicateEditor or by button
                 effects: [],
-                is_final: false,
+                isFinal: false,
             };
         },
         createNewEvent() {
@@ -181,7 +181,7 @@ export default {
                 this.storyEvents.push(updatedEvent);
             }
             this.currentEvent = null; // Close editor
-            this.message = 'Event saved.';
+            this.message = 'Event saved at index ' + index;
             this.messageType = 'success';
         },
         handleCancelEventEdit() {

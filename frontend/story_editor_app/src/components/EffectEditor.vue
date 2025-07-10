@@ -15,7 +15,7 @@
         <label class="block text-sm font-medium text-gray-700 mb-1">New Location ID:</label>
         <input
           type="text"
-          v-model="localEffect.new_location_id"
+          v-model="localEffect.newLocationId"
           placeholder="Enter location ID (optional)"
           @input="updateEffect"
           class="input-field"
@@ -26,7 +26,7 @@
         <label class="block text-sm font-medium text-gray-700 mb-1">Tweak Value (Variable Name):</label>
         <input
           type="text"
-          v-model="localEffect.tweak_value"
+          v-model="localEffect.tweakValue"
           placeholder="Variable to change (e.g., score)"
           @input="updateEffect"
           class="input-field"
@@ -36,7 +36,7 @@
         <label class="block text-sm font-medium text-gray-700 mb-1">Tweak Amount:</label>
         <input
           type="number"
-          v-model.number="localEffect.tweak_amount"
+          v-model.number="localEffect.tweakAmount"
           placeholder="Amount (e.g., 10 or -5)"
           @input="updateEffect"
           class="input-field"
@@ -44,7 +44,7 @@
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">New Run State:</label>
-        <select v-model="localEffect.new_state" @change="updateEffect" class="input-field">
+        <select v-model="localEffect.newState" @change="updateEffect" class="input-field">
           <option value="RS_UNKNOWN">Unknown</option>
           <option value="RS_ACTIVE">Active</option>
           <option value="RS_HIATUS">Hiatus</option>
@@ -65,28 +65,34 @@ export default {
       required: true,
       default: () => ({
         description: '',
-        new_location_id: '',
-        tweak_value: '',
-        tweak_amount: 0,
-        new_state: 'RS_UNKNOWN', // Default to string representation
+        newLocationId: '',
+        tweakValue: '',
+        tweakAmount: 0,
+        newState: 'RS_UNKNOWN', // Default to string representation
       })
     }
   },
   data() {
-    // Deep clone and ensure correct types
-    const effectCopy = JSON.parse(JSON.stringify(this.effect));
-    effectCopy.tweak_amount = Number(effectCopy.tweak_amount) || 0;
-    effectCopy.new_state = this.runStateToString(effectCopy.new_state); // Ensure it's a string for select
     return {
-      localEffect: effectCopy,
+      runStateMap: {
+        RS_UNKNOWN: 0, RS_ACTIVE: 1, RS_HIATUS: 2, RS_COMPLETE: 3,
+        0: "RS_UNKNOWN", 1: "RS_ACTIVE", 2: "RS_HIATUS", 3: "RS_COMPLETE",
+      },
     };
+  },
+  created() {
+    // Deep clone and ensure correct types.
+    const effectCopy = JSON.parse(JSON.stringify(this.effect));
+    effectCopy.tweakAmount = Number(effectCopy.tweakAmount) || 0;
+    effectCopy.newState = this.runStateToString(effectCopy.newState); // Ensure it's a string for select
+    this.localEffect = effectCopy
   },
   watch: {
     effect: {
       handler(newVal) {
         const newEffectCopy = JSON.parse(JSON.stringify(newVal));
-        newEffectCopy.tweak_amount = Number(newEffectCopy.tweak_amount) || 0;
-        newEffectCopy.new_state = this.runStateToString(newEffectCopy.new_state);
+        newEffectCopy.tweakAmount = Number(newEffectCopy.tweakAmount) || 0;
+        newEffectCopy.newState = this.runStateToString(newEffectCopy.newState);
         this.localEffect = newEffectCopy;
       },
       deep: true,
@@ -94,10 +100,6 @@ export default {
     }
   },
   methods: {
-    runStateMap: {
-      RS_UNKNOWN: 0, RS_ACTIVE: 1, RS_HIATUS: 2, RS_COMPLETE: 3,
-      0: "RS_UNKNOWN", 1: "RS_ACTIVE", 2: "RS_HIATUS", 3: "RS_COMPLETE",
-    },
     runStateToString(value) {
       return (typeof value === 'number') ? this.runStateMap[value] : value;
     },
@@ -107,16 +109,16 @@ export default {
     updateEffect() {
       const effectToEmit = JSON.parse(JSON.stringify(this.localEffect));
       // Convert enum back to number before emitting
-      effectToEmit.new_state = this.runStateToNumber(effectToEmit.new_state);
-      // Ensure tweak_amount is a number
-      effectToEmit.tweak_amount = Number(effectToEmit.tweak_amount) || 0;
+      effectToEmit.newState = this.runStateToNumber(effectToEmit.newState);
+      // Ensure tweakAmount is a number
+      effectToEmit.tweakAmount = Number(effectToEmit.tweakAmount) || 0;
       this.$emit('update:effect', effectToEmit);
     }
   },
   mounted() {
-    // Ensure new_state is initialized if not present in prop
-    if (!this.localEffect.new_state) {
-        this.localEffect.new_state = 'RS_UNKNOWN';
+    // Ensure newState is initialized if not present in prop
+    if (!this.localEffect.newState) {
+        this.localEffect.newState = 'RS_UNKNOWN';
     }
     this.updateEffect(); // Emit initial state
   }

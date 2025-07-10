@@ -1,6 +1,6 @@
 <template>
   <div class="trigger-action-editor p-4 border border-gray-400 rounded-lg bg-white shadow-md">
-    <h3 class="text-lg font-semibold text-gray-800 mb-3">Edit Event/Trigger</h3>
+    <h3 class="text-lg font-semibold text-gray-800 mb-3">Edit Event</h3>
 
     <div class="mb-4">
       <label class="block text-sm font-medium text-gray-700 mb-1">Condition (Predicate):</label>
@@ -19,14 +19,14 @@
 
     <div class="mb-4">
       <label class="flex items-center">
-        <input type="checkbox" v-model="localTriggerAction.is_final" @change="updateTriggerAction" class="form-checkbox h-5 w-5 text-indigo-600" />
+        <input type="checkbox" v-model="localTriggerAction.isFinal" @change="updateTriggerAction" class="form-checkbox h-5 w-5 text-indigo-600" />
         <span class="ml-2 text-sm text-gray-700">Is Final (stops further trigger evaluation in this scope)</span>
       </label>
     </div>
 
     <div class="flex justify-end mt-4">
       <button @click="saveTriggerAction" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50">
-        Save Event/Trigger
+        Save Event
       </button>
        <button @click="$emit('cancel-edit')" class="ml-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none">
         Cancel
@@ -52,7 +52,7 @@ export default {
       default: () => ({
         condition: null, // Will be initialized by button click
         effects: [],
-        is_final: false,
+        isFinal: false,
       })
     }
   },
@@ -87,7 +87,7 @@ export default {
   methods: {
     initializeCondition() {
       // Default to a 'compare' predicate
-      this.localTriggerAction.condition = { comp: { key_one: '', key_two: '', operation: 'CMP_EQ' } };
+      this.localTriggerAction.condition = { comp: { keyOne: '', keyTwo: '', operation: 'CMP_EQ' } };
       this.updateTriggerAction();
     },
     updateCondition(newCondition) {
@@ -100,10 +100,10 @@ export default {
       }
       this.localTriggerAction.effects.push({
         description: '',
-        new_location_id: '',
-        tweak_value: '',
-        tweak_amount: 0,
-        new_state: 'RS_UNKNOWN', // Default string for enum
+        newLocationId: '',
+        tweakValue: '',
+        tweakAmount: 0,
+        newState: 'RS_UNKNOWN', // Default string for enum
       });
       this.updateTriggerAction();
     },

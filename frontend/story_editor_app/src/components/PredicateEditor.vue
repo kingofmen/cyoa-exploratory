@@ -11,7 +11,7 @@
     <!-- Compare Editor -->
     <div v-if="predicateType === 'compare'" class="compare-editor">
       <div class="grid grid-cols-3 gap-2 mb-2">
-        <input type="text" v-model="localPredicate.comp.key_one" placeholder="Key 1 (e.g., var_name)" class="input-sm" @input="updatePredicate"/>
+        <input type="text" v-model="localPredicate.comp.keyOne" placeholder="Key 1 (e.g., var_name)" class="input-sm" @input="updatePredicate"/>
         <select v-model="localPredicate.comp.operation" class="input-sm" @change="updatePredicate">
           <option value="CMP_GT">&gt;</option>
           <option value="CMP_LT">&lt;</option>
@@ -22,7 +22,7 @@
           <option value="CMP_STREQ">String Equals</option>
           <option value="CMP_STRIN">String In</option>
         </select>
-        <input type="text" v-model="localPredicate.comp.key_two" placeholder="Key 2 (e.g., value or var_name)" class="input-sm" @input="updatePredicate"/>
+        <input type="text" v-model="localPredicate.comp.keyTwo" placeholder="Key 2 (e.g., value or var_name)" class="input-sm" @input="updatePredicate"/>
       </div>
     </div>
 
@@ -50,23 +50,34 @@ export default {
     predicate: {
       type: Object,
       required: true,
-      default: () => ({ comp: { key_one: '', key_two: '', operation: 'CMP_EQ' } }) // Default to a compare operation
+      default: () => ({ comp: { keyOne: '', keyTwo: '', operation: 'CMP_EQ' } }) // Default to a compare operation
     }
   },
   data() {
+    return {
+      compareOpMap: {
+        CMP_GT: 0, CMP_LT: 1, CMP_EQ: 2, CMP_GTE: 3, CMP_LTE: 4, CMP_NEQ: 5, CMP_STREQ: 6, CMP_STRIN: 7,
+        0: "CMP_GT", 1: "CMP_LT", 2: "CMP_EQ", 3: "CMP_GTE", 4: "CMP_LTE", 5: "CMP_NEQ", 6: "CMP_STREQ", 7: "CMP_STRIN",
+      },
+      combineOpMap: {
+        IF_ALL: 0, IF_ANY: 1, IF_NONE: 2,
+        0: "IF_ALL", 1: "IF_ANY", 2: "IF_NONE",
+      },
+    };
+  },
+  created() {
     // Deep clone the predicate to avoid mutating the prop directly
     const localPredicateCopy = JSON.parse(JSON.stringify(this.predicate));
 
     // Ensure the predicate structure is initialized
     if (!localPredicateCopy.comp && !localPredicateCopy.comb) {
-      localPredicateCopy.comp = { key_one: '', key_two: '', operation: 'CMP_EQ' };
+      localPredicateCopy.comp = { keyOne: '', keyTwo: '', operation: 'CMP_EQ' };
     } else if (localPredicateCopy.comp && typeof localPredicateCopy.comp.operation === 'number') {
       // Convert numeric enum to string for select binding if necessary
       localPredicateCopy.comp.operation = this.compareOpToString(localPredicateCopy.comp.operation);
     } else if (localPredicateCopy.comb && typeof localPredicateCopy.comb.operation === 'number') {
       localPredicateCopy.comb.operation = this.combineOpToString(localPredicateCopy.comb.operation);
     }
-
 
     let type = 'compare';
     if (localPredicateCopy.comb) {
@@ -77,12 +88,8 @@ export default {
     } else if (localPredicateCopy.comp) {
       type = 'compare';
     }
-
-
-    return {
-      localPredicate: localPredicateCopy,
-      predicateType: type,
-    };
+    this.localPredicate = localPredicateCopy;
+    this.predicateType = type;
   },
   watch: {
     predicate: {
@@ -100,7 +107,7 @@ export default {
         } else {
           // Default to compare if structure is missing
           this.predicateType = 'compare';
-          this.localPredicate = { comp: { key_one: '', key_two: '', operation: 'CMP_EQ' } };
+          this.localPredicate = { comp: { keyOne: '', keyTwo: '', operation: 'CMP_EQ' } };
         }
       },
       deep: true,
@@ -108,14 +115,6 @@ export default {
     }
   },
   methods: {
-    compareOpMap: {
-      CMP_GT: 0, CMP_LT: 1, CMP_EQ: 2, CMP_GTE: 3, CMP_LTE: 4, CMP_NEQ: 5, CMP_STREQ: 6, CMP_STRIN: 7,
-      0: "CMP_GT", 1: "CMP_LT", 2: "CMP_EQ", 3: "CMP_GTE", 4: "CMP_LTE", 5: "CMP_NEQ", 6: "CMP_STREQ", 7: "CMP_STRIN",
-    },
-    combineOpMap: {
-      IF_ALL: 0, IF_ANY: 1, IF_NONE: 2,
-      0: "IF_ALL", 1: "IF_ANY", 2: "IF_NONE",
-    },
     compareOpToString(opValue) {
       return (typeof opValue === 'number') ? this.compareOpMap[opValue] : opValue;
     },
@@ -130,7 +129,7 @@ export default {
     },
     onPredicateTypeChange() {
       if (this.predicateType === 'compare') {
-        this.localPredicate = { comp: { key_one: '', key_two: '', operation: 'CMP_EQ' } };
+        this.localPredicate = { comp: { keyOne: '', keyTwo: '', operation: 'CMP_EQ' } };
         delete this.localPredicate.comb;
       } else {
         this.localPredicate = { comb: { operands: [], operation: 'IF_ALL' } };
@@ -145,7 +144,7 @@ export default {
       if (!this.localPredicate.comb.operands) {
         this.localPredicate.comb.operands = [];
       }
-      this.localPredicate.comb.operands.push({ comp: { key_one: '', key_two: '', operation: 'CMP_EQ' } });
+      this.localPredicate.comb.operands.push({ comp: { keyOne: '', keyTwo: '', operation: 'CMP_EQ' } });
       this.updatePredicate();
     },
     updateSubPredicate(index, updatedSubPredicate) {
