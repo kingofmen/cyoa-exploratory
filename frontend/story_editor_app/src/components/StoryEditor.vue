@@ -24,6 +24,32 @@
         <div v-if="startLocation" class="mb-6 text-left">
             <h4 class="text-lg font-medium text-gray-800 mb-2">Starting Location: {{ startLocation.title }}</h4>
         </div>
+
+        <!-- Events Section -->
+        <div class="mt-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-3">Events</h3>
+            <button
+                @click="createNewEvent"
+                class="mb-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">
+                Create New Event
+            </button>
+            <div v-if="currentEvent" class="mt-4 p-4 border border-gray-300 rounded-md bg-white">
+                 <TriggerActionEditor :triggerAction="currentEvent" @save-trigger-action="handleSaveEvent" @cancel-edit="handleCancelEventEdit" />
+            </div>
+            <ul v-if="storyEvents && storyEvents.length" class="list-disc pl-5 mb-4">
+                <li v-for="(event, index) in storyEvents" :key="event.id || index" class="mb-2 flex justify-between items-center">
+                    <span>Event {{ index + 1 }} <span v-if="event.condition && event.condition.comp" class="text-xs text-gray-500 ml-2">({{event.condition.comp.keyOne}} {{event.condition.comp.operation}} {{event.condition.comp.keyTwo}})</span></span>
+                    <button
+                        @click="editEvent(event)"
+                        class="ml-2 px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 text-sm"
+                    >
+                        Edit
+                    </button>
+                </li>
+            </ul>
+            <p v-else class="text-gray-500 mb-4">No global events created yet.</p>
+        </div>
+
         <div class="mt-6">
             <h3 class="text-xl font-semibold text-gray-800 mb-3">Locations</h3>
             <button
@@ -78,6 +104,8 @@
 </template>
 
 <script>
+import TriggerActionEditor from './TriggerActionEditor.vue'; // Import the new component
+
 export default {
     data() {
         // Initialize story data from window.initialStoryData if available, otherwise use defaults.
@@ -113,11 +141,54 @@ export default {
             content: initialContent,
             currentLocation: initialContent.locations.length > 0 ? initialContent.locations[0] : null,
 	    startLocation: sloc,
+            storyEvents: initialStory.events || [],
+            currentEvent: null, // For editing a specific event
             message: '',
             messageType: ''
         };
     },
+    components: {
+      TriggerActionEditor, // Register the new component
+    },
     methods: {
+        initializeNewEvent() {
+            return {
+                id: crypto.randomUUID(), // Temporary frontend ID
+                condition: null, // Will be initialized in PredicateEditor or by button
+                effects: [],
+                isFinal: false,
+            };
+        },
+        createNewEvent() {
+            const newEvent = this.initializeNewEvent();
+            if (!this.storyEvents) {
+                this.storyEvents = [];
+            }
+            this.storyEvents.push(newEvent);
+            this.currentEvent = newEvent;
+            this.message = 'New event created. Configure its details below.';
+            this.messageType = '';
+        },
+        editEvent(event) {
+            this.currentEvent = event;
+        },
+        handleSaveEvent(updatedEvent) {
+            const index = this.storyEvents.findIndex(e => e.id === updatedEvent.id || (this.currentEvent && e === this.currentEvent)); // Handle new vs existing
+            if (index !== -1) {
+                this.storyEvents.splice(index, 1, updatedEvent);
+            } else {
+                // This case should ideally not happen if currentEvent was set correctly
+                this.storyEvents.push(updatedEvent);
+            }
+            this.currentEvent = null; // Close editor
+            this.message = 'Event saved at index ' + index;
+            this.messageType = 'success';
+        },
+        handleCancelEventEdit() {
+            // If it was a new event that wasn't fully saved, consider removing it or reverting
+            // For simplicity now, just closes the editor
+            this.currentEvent = null;
+        },
         createNewLocation() {
             const newLocation = {
                 id: crypto.randomUUID(),
@@ -146,7 +217,7 @@ export default {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-		      story: this.story,
+		      story: { ...this.story, events: this.storyEvents }, // Include events
 		      content: this.content,
 		    }),
                 });

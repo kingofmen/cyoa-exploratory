@@ -2,7 +2,9 @@
 package server
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -185,6 +187,16 @@ func (h *Handler) UpdateLocationHandler(w http.ResponseWriter, req *http.Request
 	http.Redirect(w, req, "/", http.StatusSeeOther)
 }
 
+func prettyPrint(prefix string, bts []byte) {
+	var pjs bytes.Buffer
+	if err := json.Indent(&pjs, bts, "", "    "); err != nil {
+		log.Printf("Couldn't pretty-print object: %v", err)
+		log.Printf("%s raw object: %b", prefix, bts)
+	} else {
+		log.Printf("%s object: %s", prefix, string(pjs.Bytes()))
+	}
+}
+
 // VueExperimentalHandler handles the experimental Vue story editor.
 func (h *Handler) VueExperimentalHandler(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
@@ -204,11 +216,13 @@ func (h *Handler) VueExperimentalHandler(w http.ResponseWriter, req *http.Reques
 			http.Error(w, fmt.Sprintf("Cannot find story with ID %q: %v", strid, err), http.StatusBadRequest)
 			return
 		}
+
 		bts, err := protojson.Marshal(resp.GetStory())
 		if err != nil {
 			http.Error(w, fmt.Sprintf("error marshaling story proto: %v", err), http.StatusInternalServerError)
 			return
 		}
+
 		data.CurrentStoryJSON = string(bts)
 		bts, err = protojson.Marshal(resp.GetContent())
 		if err != nil {
@@ -229,8 +243,12 @@ func (h *Handler) CreateOrUpdateStoryHandler(w http.ResponseWriter, req *http.Re
 		http.Error(w, fmt.Sprintf("could not read request body: %v", err), http.StatusBadRequest)
 		return
 	}
+
 	updReq := &spb.UpdateStoryRequest{}
-	if err := protojson.Unmarshal(bts, updReq); err != nil {
+	opts := protojson.UnmarshalOptions{DiscardUnknown: true}
+	if err := opts.Unmarshal(bts, updReq); err != nil {
+		log.Printf("Failed to parse request: %v", err)
+		prettyPrint("Request", bts)
 		http.Error(w, fmt.Sprintf("could not parse request object: %v", err), http.StatusBadRequest)
 		return
 	}
