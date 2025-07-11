@@ -37,11 +37,16 @@ message Story {
   repeated TriggerAction events = 5;
 }
 
+message ActionCondition {
+  string action_id = 1;
+  logic.Predicate condition = 2;
+}
+
 message Location {
   string id = 1;
   string title = 2;
   string content = 3;
-  repeated string available_action_ids = 4;
+  repeated ActionCondition possible_actions = 5;
 }
 
 message Action {

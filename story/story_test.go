@@ -33,7 +33,7 @@ func TestHandleAction(t *testing.T) {
 		{
 			desc: "No-op",
 			act:  &storypb.Action{Id: proto.String(uuid1)},
-			loc:  &storypb.Location{Id: proto.String(uuid1), AvailableActionIds: []string{uuid1}},
+			loc:  &storypb.Location{Id: proto.String(uuid1), PossibleActions: []*storypb.ActionCondition{&storypb.ActionCondition{ActionId: proto.String(uuid1)}}},
 			game: &storypb.Playthrough{Id: proto.Int64(1), LocationId: proto.String(uuid1)},
 			want: &storypb.Playthrough{Id: proto.Int64(1), LocationId: proto.String(uuid1)},
 		},
@@ -49,7 +49,7 @@ func TestHandleAction(t *testing.T) {
 					},
 				},
 			},
-			loc:  &storypb.Location{Id: proto.String(uuid1), AvailableActionIds: []string{uuid1}},
+			loc:  &storypb.Location{Id: proto.String(uuid1), PossibleActions: []*storypb.ActionCondition{&storypb.ActionCondition{ActionId: proto.String(uuid1)}}},
 			game: &storypb.Playthrough{Id: proto.Int64(1), LocationId: proto.String(uuid1)},
 			want: &storypb.Playthrough{Id: proto.Int64(1), LocationId: proto.String(uuid2)},
 		},
@@ -74,7 +74,7 @@ func TestHandleAction(t *testing.T) {
 					},
 				},
 			},
-			loc: &storypb.Location{Id: proto.String(uuid1), AvailableActionIds: []string{uuid1}},
+			loc: &storypb.Location{Id: proto.String(uuid1), PossibleActions: []*storypb.ActionCondition{&storypb.ActionCondition{ActionId: proto.String(uuid1)}}},
 			game: &storypb.Playthrough{
 				Id:         proto.Int64(1),
 				LocationId: proto.String(uuid1),
@@ -107,7 +107,7 @@ func TestHandleAction(t *testing.T) {
 					},
 				},
 			},
-			loc: &storypb.Location{Id: proto.String(uuid1), AvailableActionIds: []string{uuid1}},
+			loc: &storypb.Location{Id: proto.String(uuid1), PossibleActions: []*storypb.ActionCondition{&storypb.ActionCondition{ActionId: proto.String(uuid1)}}},
 			game: &storypb.Playthrough{
 				Id:         proto.Int64(1),
 				LocationId: proto.String(uuid1),
@@ -145,7 +145,7 @@ func TestHandleAction(t *testing.T) {
 					},
 				},
 			},
-			loc: &storypb.Location{Id: proto.String(uuid1), AvailableActionIds: []string{uuid1}},
+			loc: &storypb.Location{Id: proto.String(uuid1), PossibleActions: []*storypb.ActionCondition{&storypb.ActionCondition{ActionId: proto.String(uuid1)}}},
 			game: &storypb.Playthrough{
 				Id:         proto.Int64(1),
 				LocationId: proto.String(uuid1),
@@ -185,7 +185,7 @@ func TestHandleAction(t *testing.T) {
 					},
 				},
 			},
-			loc: &storypb.Location{Id: proto.String(uuid1), AvailableActionIds: []string{uuid1}},
+			loc: &storypb.Location{Id: proto.String(uuid1), PossibleActions: []*storypb.ActionCondition{&storypb.ActionCondition{ActionId: proto.String(uuid1)}}},
 			game: &storypb.Playthrough{
 				Id:         proto.Int64(1),
 				LocationId: proto.String(uuid1),
@@ -216,7 +216,7 @@ func TestHandleAction(t *testing.T) {
 					},
 				},
 			},
-			loc:  &storypb.Location{Id: proto.String(uuid1), AvailableActionIds: []string{uuid1}},
+			loc:  &storypb.Location{Id: proto.String(uuid1), PossibleActions: []*storypb.ActionCondition{&storypb.ActionCondition{ActionId: proto.String(uuid1)}}},
 			game: &storypb.Playthrough{Id: proto.Int64(1), LocationId: proto.String(uuid1)},
 			want: &storypb.Playthrough{
 				Id:         proto.Int64(1),
@@ -240,7 +240,7 @@ func TestHandleAction(t *testing.T) {
 					},
 				},
 			},
-			loc: &storypb.Location{Id: proto.String(uuid1), AvailableActionIds: []string{uuid1}},
+			loc: &storypb.Location{Id: proto.String(uuid1), PossibleActions: []*storypb.ActionCondition{&storypb.ActionCondition{ActionId: proto.String(uuid1)}}},
 			game: &storypb.Playthrough{
 				Id:         proto.Int64(1),
 				LocationId: proto.String(uuid1),
@@ -291,7 +291,7 @@ func TestHandleAction(t *testing.T) {
 					},
 				},
 			},
-			loc: &storypb.Location{Id: proto.String(uuid1), AvailableActionIds: []string{uuid1}},
+			loc: &storypb.Location{Id: proto.String(uuid1), PossibleActions: []*storypb.ActionCondition{&storypb.ActionCondition{ActionId: proto.String(uuid1)}}},
 			game: &storypb.Playthrough{
 				Id:         proto.Int64(1),
 				LocationId: proto.String(uuid1),
@@ -343,16 +343,16 @@ func TestHandleActionSad(t *testing.T) {
 		{
 			desc: "Bad ID",
 			act:  &storypb.Action{Id: proto.String(uuid1)},
-			loc:  &storypb.Location{Id: proto.String(uuid1), AvailableActionIds: []string{uuid1}},
+			loc:  &storypb.Location{Id: proto.String(uuid1), PossibleActions: []*storypb.ActionCondition{&storypb.ActionCondition{ActionId: proto.String(uuid1)}}},
 			game: &storypb.Playthrough{Id: proto.Int64(1), LocationId: proto.String(uuid2)},
 			want: fmt.Sprintf("when current location is %s", uuid2),
 		},
 		{
 			desc: "Disallowed action",
 			act:  &storypb.Action{Id: proto.String(uuid1)},
-			loc:  &storypb.Location{Id: proto.String(uuid1), AvailableActionIds: []string{uuid10}},
+			loc:  &storypb.Location{Id: proto.String(uuid1), PossibleActions: []*storypb.ActionCondition{&storypb.ActionCondition{ActionId: proto.String(uuid10)}}},
 			game: &storypb.Playthrough{Id: proto.Int64(1), LocationId: proto.String(uuid1)},
-			want: fmt.Sprintf("not allowed in location %s", uuid1),
+			want: fmt.Sprintf("%s not in possible-actions", uuid1),
 		},
 	}
 

@@ -40,14 +40,22 @@ func (g *gameState) ListScopes() []string {
 	return []string{}
 }
 
-// allowed returns true if the action is in the location's available list.
-func allowed(act *storypb.Action, loc *storypb.Location) bool {
-	for _, av := range loc.GetAvailableActionIds() {
-		if av == act.GetId() {
-			return true
+// allowed returns an error if the action is not available in the location.
+func allowed(act *storypb.Action, loc *storypb.Location, state logic.Lookup) error {
+	for _, cand := range loc.GetPossibleActions() {
+		if cand.GetActionId() != act.GetId() {
+			continue
 		}
+		ok, err := logic.Eval(cand.GetCondition(), state)
+		if err != nil {
+			return fmt.Errorf("could not evaluate condition: %w", err)
+		}
+		if !ok {
+			return fmt.Errorf("condition fails")
+		}
+		return nil
 	}
-	return false
+	return fmt.Errorf("action ID %s not in possible-actions list", act.GetId())
 }
 
 // apply sets the new state of the playthrough according to the effect.
@@ -73,11 +81,11 @@ func HandleEvent(event *storypb.GameEvent) (*storypb.Playthrough, error) {
 	if clid := game.GetLocationId(); lid != clid {
 		return nil, fmt.Errorf("cannot apply action %s (%s) to location %s (%s) when current location is %s", aid, act.GetTitle(), lid, loc.GetTitle(), clid)
 	}
-	if !allowed(act, loc) {
-		return nil, fmt.Errorf("action %s (%s) not allowed in location %s (%s)", aid, act.GetTitle(), lid, loc.GetTitle())
+	state := &gameState{game: game}
+	if err := allowed(act, loc, state); err != nil {
+		return nil, fmt.Errorf("action %s (%s) not available in location %s (%s): %w", aid, act.GetTitle(), lid, loc.GetTitle(), err)
 	}
 
-	state := &gameState{game: game}
 	for idx, tap := range act.GetTriggers() {
 		trigger, err := logic.Eval(tap.GetCondition(), state)
 		if err != nil {
