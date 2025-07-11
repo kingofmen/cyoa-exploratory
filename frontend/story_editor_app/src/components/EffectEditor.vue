@@ -20,7 +20,7 @@
         >
           <option value="">--- Select Location ---</option>
           <option v-for="location in availableLocations" :key="location.id" :value="location.id">
-            {{ location.title }} ({{ location.id }})
+            {{ location.title }}
           </option>
         </select>
       </div>
@@ -73,7 +73,7 @@ export default {
         newState: 'RS_UNKNOWN', // Default to string representation
       })
     },
-    availableLocations: { // Added prop
+    availableLocations: {
       type: Array,
       default: () => []
     }

@@ -55,7 +55,7 @@ export default {
         isFinal: false,
       })
     },
-    availableLocations: { // Added prop
+    availableLocations: {
       type: Array,
       default: () => []
     }
