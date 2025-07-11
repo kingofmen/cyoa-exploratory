@@ -158,8 +158,13 @@ func getStoryImpl(ctx context.Context, db *sql.DB, sid int64, view spb.StoryView
 		if err != nil {
 			return nil, txnError(fmt.Sprintf("could not load story %d locations", sid), txn, err)
 		}
+		acts, err := loadStoryActions(ctx, txn, sid)
+		if err != nil {
+			return nil, txnError(fmt.Sprintf("could not load story %d actions", sid), txn, err)
+		}
 		resp.Content = &spb.StoryContent{
 			Locations: locs,
+			Actions:   acts,
 		}
 	}
 

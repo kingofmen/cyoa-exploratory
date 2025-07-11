@@ -94,3 +94,30 @@ func loadStoryLocations(ctx context.Context, txn *sql.Tx, sid int64) ([]*storypb
 	}
 	return ret, nil
 }
+
+func loadStoryActions(ctx context.Context, txn *sql.Tx, sid int64) ([]*storypb.Action, error) {
+	rows, err := txn.QueryContext(ctx, `SELECT a.id, a.proto
+                                      FROM StoryActions AS sa
+                                      JOIN Actions AS a
+                                      ON sa.action_id = a.id
+                                      WHERE sa.story_id = ?`,
+		sid)
+	if err != nil {
+		return nil, fmt.Errorf("story %d actions query failed: %w", sid, err)
+	}
+	ret := make([]*storypb.Action, 0, 10)
+	for rows.Next() {
+		var aid string
+		blob := []byte{}
+		if err := rows.Scan(&aid, &blob); err != nil {
+			return nil, fmt.Errorf("error scanning action for story %d: %w", sid, err)
+		}
+		act := &storypb.Action{}
+		if err := proto.Unmarshal(blob, act); err != nil {
+			return nil, fmt.Errorf("could not unmarshal action %s for story %d: %w", aid, sid, err)
+		}
+		act.Id = proto.String(aid)
+		ret = append(ret, act)
+	}
+	return ret, nil
+}
