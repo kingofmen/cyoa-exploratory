@@ -13,14 +13,16 @@
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">New Location ID:</label>
-        <input
-          type="text"
+        <select
           v-model="localEffect.newLocationId"
-          placeholder="Enter location ID (optional)"
-          @input="updateEffect"
+          @change="updateEffect"
           class="input-field"
-        />
-        <!-- TODO: Consider a dropdown populated with actual location IDs from the story -->
+        >
+          <option value="">--- Select Location ---</option>
+          <option v-for="location in availableLocations" :key="location.id" :value="location.id">
+            {{ location.title }}
+          </option>
+        </select>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Tweak Value (Variable Name):</label>
@@ -70,6 +72,10 @@ export default {
         tweakAmount: 0,
         newState: 'RS_UNKNOWN', // Default to string representation
       })
+    },
+    availableLocations: {
+      type: Array,
+      default: () => []
     }
   },
   data() {

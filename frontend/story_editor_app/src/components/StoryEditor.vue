@@ -34,7 +34,7 @@
                 Create New Event
             </button>
             <div v-if="currentEvent" class="mt-4 p-4 border border-gray-300 rounded-md bg-white">
-                 <TriggerActionEditor :triggerAction="currentEvent" @save-trigger-action="handleSaveEvent" @cancel-edit="handleCancelEventEdit" />
+                 <TriggerActionEditor :triggerAction="currentEvent" :availableLocations="content.locations" @save-trigger-action="handleSaveEvent" @cancel-edit="handleCancelEventEdit" />
             </div>
             <ul v-if="storyEvents && storyEvents.length" class="list-disc pl-5 mb-4">
                 <li v-for="(event, index) in storyEvents" :key="event.id || index" class="mb-2 flex justify-between items-center">

@@ -11,7 +11,7 @@
     <div class="mb-4">
       <h4 class="text-md font-medium text-gray-700 mb-2">Effects:</h4>
       <div v-for="(effect, index) in localTriggerAction.effects" :key="index" class="mb-3">
-        <EffectEditor :effect="effect" @update:effect="updateEffect(index, $event)" @delete-effect="removeEffect(index)" />
+        <EffectEditor :effect="effect" :availableLocations="availableLocations" @update:effect="updateEffect(index, $event)" @delete-effect="removeEffect(index)" />
       </div>
       <button @click="addEffect" class="btn-sm bg-green-500 hover:bg-green-600 text-white">Add Effect</button>
       <p v-if="!localTriggerAction.effects || localTriggerAction.effects.length === 0" class="text-sm text-gray-500 mt-1">No effects defined. Click "Add Effect".</p>
@@ -54,6 +54,10 @@ export default {
         effects: [],
         isFinal: false,
       })
+    },
+    availableLocations: {
+      type: Array,
+      default: () => []
     }
   },
   data() {
