@@ -77,81 +77,6 @@ func TestStoryE2E(t *testing.T) {
 	uuid2 := uuid.New().String()
 	uuid3 := uuid.New().String()
 	uuid4 := uuid.New().String()
-	csresp, err := srv.UpdateStory(ctx, &spb.UpdateStoryRequest{
-		Story: &storypb.Story{
-			Title:           proto.String("E2E test story"),
-			Description:     proto.String("Story for end-to-end testing"),
-			StartLocationId: proto.String(uuid1),
-			Events: []*storypb.TriggerAction{
-				&storypb.TriggerAction{
-					Condition: &lpb.Predicate{
-						Test: &lpb.Predicate_Comp{
-							Comp: &lpb.Compare{
-								KeyOne:    proto.String("ogre_defeated"),
-								KeyTwo:    proto.String("0"),
-								Operation: lpb.Compare_CMP_GT.Enum(),
-							},
-						},
-					},
-					Effects: []*storypb.Effect{
-						&storypb.Effect{
-							NewState: storypb.RunState_RS_COMPLETE.Enum(),
-						},
-					},
-				},
-				&storypb.TriggerAction{
-					Condition: &lpb.Predicate{
-						Test: &lpb.Predicate_Comp{
-							Comp: &lpb.Compare{
-								KeyOne:    proto.String("player_killed"),
-								KeyTwo:    proto.String("0"),
-								Operation: lpb.Compare_CMP_GT.Enum(),
-							},
-						},
-					},
-					Effects: []*storypb.Effect{
-						&storypb.Effect{
-							NewState: storypb.RunState_RS_COMPLETE.Enum(),
-						},
-					},
-				},
-			},
-		},
-		Content: &spb.StoryContent{
-			Locations: []*storypb.Location{
-				&storypb.Location{
-					Id:      proto.String(uuid1),
-					Title:   proto.String("Choose Character"),
-					Content: proto.String("Choose which character to play as."),
-					PossibleActions: []*storypb.ActionCondition{
-						&storypb.ActionCondition{ActionId: proto.String(uuid1)},
-						&storypb.ActionCondition{ActionId: proto.String(uuid2)},
-					},
-				},
-				&storypb.Location{
-					Id:      proto.String(uuid2),
-					Title:   proto.String("Ogre Encounter"),
-					Content: proto.String("Either fight the ogre or attempt to sneak past it."),
-					PossibleActions: []*storypb.ActionCondition{
-						&storypb.ActionCondition{ActionId: proto.String(uuid3)},
-						&storypb.ActionCondition{ActionId: proto.String(uuid4)},
-					},
-				},
-			},
-		},
-	})
-	if err != nil {
-		t.Fatalf("UpdateStory() => %v, want nil", err)
-	}
-	stid := csresp.GetStory().GetId()
-	if stid != 1 {
-		t.Fatalf("UpdateStory() returned story ID %d, want 1", stid)
-	}
-
-	if llresp, err := srv.ListLocations(ctx, &spb.ListLocationsRequest{}); err != nil || len(llresp.GetLocations()) != 2 {
-		t.Fatalf("Created 2 locations but List finds %d: %s error: %v", len(llresp.GetLocations()), prototext.Format(llresp), err)
-	}
-
 	charFighter := &storypb.Action{
 		Id:          proto.String(uuid1),
 		Title:       proto.String("Fighter"),
@@ -251,15 +176,82 @@ func TestStoryE2E(t *testing.T) {
 		},
 	}
 
-	actions := []*storypb.Action{charFighter, charThief, fightOgre, sneakOgre}
-	for idx, act := range actions {
-		resp, err := srv.CreateAction(ctx, &spb.CreateActionRequest{
-			Action: act,
-		})
-		if err != nil {
-			t.Fatalf("Could not create action %d: %v", idx, err)
-		}
-		actions[idx] = resp.GetAction()
+	csresp, err := srv.UpdateStory(ctx, &spb.UpdateStoryRequest{
+		Story: &storypb.Story{
+			Title:           proto.String("E2E test story"),
+			Description:     proto.String("Story for end-to-end testing"),
+			StartLocationId: proto.String(uuid1),
+			Events: []*storypb.TriggerAction{
+				&storypb.TriggerAction{
+					Condition: &lpb.Predicate{
+						Test: &lpb.Predicate_Comp{
+							Comp: &lpb.Compare{
+								KeyOne:    proto.String("ogre_defeated"),
+								KeyTwo:    proto.String("0"),
+								Operation: lpb.Compare_CMP_GT.Enum(),
+							},
+						},
+					},
+					Effects: []*storypb.Effect{
+						&storypb.Effect{
+							NewState: storypb.RunState_RS_COMPLETE.Enum(),
+						},
+					},
+				},
+				&storypb.TriggerAction{
+					Condition: &lpb.Predicate{
+						Test: &lpb.Predicate_Comp{
+							Comp: &lpb.Compare{
+								KeyOne:    proto.String("player_killed"),
+								KeyTwo:    proto.String("0"),
+								Operation: lpb.Compare_CMP_GT.Enum(),
+							},
+						},
+					},
+					Effects: []*storypb.Effect{
+						&storypb.Effect{
+							NewState: storypb.RunState_RS_COMPLETE.Enum(),
+						},
+					},
+				},
+			},
+		},
+		Content: &spb.StoryContent{
+			Locations: []*storypb.Location{
+				&storypb.Location{
+					Id:      proto.String(uuid1),
+					Title:   proto.String("Choose Character"),
+					Content: proto.String("Choose which character to play as."),
+					PossibleActions: []*storypb.ActionCondition{
+						&storypb.ActionCondition{ActionId: proto.String(uuid1)},
+						&storypb.ActionCondition{ActionId: proto.String(uuid2)},
+					},
+				},
+				&storypb.Location{
+					Id:      proto.String(uuid2),
+					Title:   proto.String("Ogre Encounter"),
+					Content: proto.String("Either fight the ogre or attempt to sneak past it."),
+					PossibleActions: []*storypb.ActionCondition{
+						&storypb.ActionCondition{ActionId: proto.String(uuid3)},
+						&storypb.ActionCondition{ActionId: proto.String(uuid4)},
+					},
+				},
+			},
+			Actions: []*storypb.Action{
+				charFighter, charThief, fightOgre, sneakOgre,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("UpdateStory() => %v, want nil", err)
+	}
+	stid := csresp.GetStory().GetId()
+	if stid != 1 {
+		t.Fatalf("UpdateStory() returned story ID %d, want 1", stid)
+	}
+
+	if llresp, err := srv.ListLocations(ctx, &spb.ListLocationsRequest{}); err != nil || len(llresp.GetLocations()) != 2 {
+		t.Fatalf("Created 2 locations but List finds %d: %s error: %v", len(llresp.GetLocations()), prototext.Format(llresp), err)
 	}
 
 	cases := []struct {

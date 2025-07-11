@@ -59,3 +59,38 @@ func updateStoryLocationsTable(ctx context.Context, txn *sql.Tx, sid int64, locI
 	}
 	return nil
 }
+
+func createOrUpdateAction(ctx context.Context, txn *sql.Tx, aid string, act *storypb.Action) (*storypb.Action, error) {
+	blob, err := proto.Marshal(act)
+	if err != nil {
+		return nil, fmt.Errorf("could not marshal updated action %s (%s): %w", aid, act.GetTitle(), err)
+	}
+	if _, err := txn.ExecContext(ctx, `INSERT INTO Actions (id, proto)
+                                     VALUES (?, ?)
+                                     ON DUPLICATE KEY UPDATE proto = VALUES(proto);
+                                    `, aid, blob); err != nil {
+		return nil, fmt.Errorf("could not insert into Actions: %w", err)
+	}
+
+	act.Id = proto.String(aid)
+	return act, nil
+}
+
+func updateStoryActionsTable(ctx context.Context, txn *sql.Tx, sid int64, actIds []string) error {
+	_, err := txn.ExecContext(ctx, `DELETE FROM StoryActions WHERE story_id = ?`, sid)
+	if err != nil {
+		return fmt.Errorf("failed to delete existing story actions: %w", err)
+	}
+	insrt, err := txn.PrepareContext(ctx, `INSERT INTO StoryActions (story_id, action_id) VALUES (?, ?)`)
+	if err != nil {
+		return fmt.Errorf("failed to prepare insert statement: %w", err)
+	}
+	defer insrt.Close()
+	for _, aid := range actIds {
+		_, err := insrt.ExecContext(ctx, sid, aid)
+		if err != nil {
+			return fmt.Errorf("failed to insert story-action association (%d, %s): %w", sid, aid, err)
+		}
+	}
+	return nil
+}

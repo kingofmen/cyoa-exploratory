@@ -15,6 +15,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	spb "github.com/kingofmen/cyoa-exploratory/backend/proto"
+	storypb "github.com/kingofmen/cyoa-exploratory/story/proto"
 )
 
 type Server struct {
@@ -103,10 +104,49 @@ func (s *Server) ListLocations(ctx context.Context, req *spb.ListLocationsReques
 	return resp, nil
 }
 
+func validateContent(content *spb.StoryContent) ([]*storypb.Location, []*storypb.Action, error) {
+	locs, acts := content.GetLocations(), content.GetActions()
+	lids, aids := make(map[string]bool), make(map[string]bool)
+	for _, loc := range locs {
+		lid := loc.GetId()
+		if err := uuid.Validate(lid); err != nil {
+			return nil, nil, fmt.Errorf("invalid location ID %q for %q: %w", lid, loc.GetTitle(), err)
+		}
+		lids[lid] = true
+	}
+	for _, act := range acts {
+		aid := act.GetId()
+		if err := uuid.Validate(aid); err != nil {
+			return nil, nil, fmt.Errorf("invalid action ID %q for %q: %w", aid, act.GetTitle(), err)
+		}
+		aids[aid] = true
+		for tidx, trg := range act.GetTriggers() {
+			for eidx, eff := range trg.GetEffects() {
+				if nlid := eff.GetNewLocationId(); len(nlid) > 0 && !lids[nlid] {
+					return nil, nil, fmt.Errorf("action %q trigger %d/%d has bad location ID %q", act.GetTitle(), tidx, eidx, nlid)
+				}
+			}
+		}
+	}
+
+	for _, loc := range locs {
+		for cidx, cand := range loc.GetPossibleActions() {
+			if caid := cand.GetActionId(); !aids[caid] {
+				return nil, nil, fmt.Errorf("location %q possible action %d has bad action ID %q", loc.GetTitle(), cidx, caid)
+			}
+		}
+	}
+	return locs, acts, nil
+}
+
 func (s *Server) UpdateStory(ctx context.Context, req *spb.UpdateStoryRequest) (*spb.UpdateStoryResponse, error) {
 	str := req.GetStory()
 	if str == nil {
 		return nil, fmt.Errorf("UpdateStory called with nil story")
+	}
+	locs, acts, err := validateContent(req.GetContent())
+	if err != nil {
+		return nil, fmt.Errorf("content validation failed: %w", err)
 	}
 
 	txn, err := s.db.BeginTx(ctx, nil)
@@ -119,8 +159,6 @@ func (s *Server) UpdateStory(ctx context.Context, req *spb.UpdateStoryRequest) (
 		return nil, txnError("could not update story", txn, err)
 	}
 
-	content := req.GetContent()
-	locs := content.GetLocations()
 	locIds := make(map[string]bool)
 	for idx, loc := range locs {
 		locs[idx], err = createOrUpdateLocation(ctx, txn, loc.GetId(), loc)
@@ -134,7 +172,20 @@ func (s *Server) UpdateStory(ctx context.Context, req *spb.UpdateStoryRequest) (
 		return nil, txnError("could not update story-location relationships", txn, err)
 	}
 
-	resp.Content = content
+	actIds := make(map[string]bool)
+	for idx, act := range acts {
+		acts[idx], err = createOrUpdateAction(ctx, txn, act.GetId(), act)
+		if err != nil {
+			return nil, txnError(fmt.Sprintf("could not update action %q", act.GetTitle()), txn, err)
+		}
+		actIds[acts[idx].GetId()] = true
+	}
+
+	if err := updateStoryActionsTable(ctx, txn, resp.GetStory().GetId(), slices.Collect(maps.Keys(actIds))); err != nil {
+		return nil, txnError("could not update story-action relationships", txn, err)
+	}
+
+	resp.Content = req.GetContent()
 	if err := txn.Commit(); err != nil {
 		return nil, txnError("could not commit to database", txn, err)
 	}
