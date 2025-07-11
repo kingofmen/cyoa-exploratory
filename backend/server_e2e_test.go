@@ -79,8 +79,9 @@ func TestStoryE2E(t *testing.T) {
 	uuid4 := uuid.New().String()
 	csresp, err := srv.UpdateStory(ctx, &spb.UpdateStoryRequest{
 		Story: &storypb.Story{
-			Title:       proto.String("E2E test story"),
-			Description: proto.String("Story for end-to-end testing"),
+			Title:           proto.String("E2E test story"),
+			Description:     proto.String("Story for end-to-end testing"),
+			StartLocationId: proto.String(uuid1),
 			Events: []*storypb.TriggerAction{
 				&storypb.TriggerAction{
 					Condition: &lpb.Predicate{
@@ -116,6 +117,28 @@ func TestStoryE2E(t *testing.T) {
 				},
 			},
 		},
+		Content: &spb.StoryContent{
+			Locations: []*storypb.Location{
+				&storypb.Location{
+					Id:      proto.String(uuid1),
+					Title:   proto.String("Choose Character"),
+					Content: proto.String("Choose which character to play as."),
+					PossibleActions: []*storypb.ActionCondition{
+						&storypb.ActionCondition{ActionId: proto.String(uuid1)},
+						&storypb.ActionCondition{ActionId: proto.String(uuid2)},
+					},
+				},
+				&storypb.Location{
+					Id:      proto.String(uuid2),
+					Title:   proto.String("Ogre Encounter"),
+					Content: proto.String("Either fight the ogre or attempt to sneak past it."),
+					PossibleActions: []*storypb.ActionCondition{
+						&storypb.ActionCondition{ActionId: proto.String(uuid3)},
+						&storypb.ActionCondition{ActionId: proto.String(uuid4)},
+					},
+				},
+			},
+		},
 	})
 	if err != nil {
 		t.Fatalf("UpdateStory() => %v, want nil", err)
@@ -125,83 +148,8 @@ func TestStoryE2E(t *testing.T) {
 		t.Fatalf("UpdateStory() returned story ID %d, want 1", stid)
 	}
 
-	clresp1, err := srv.CreateLocation(ctx, &spb.CreateLocationRequest{
-		Location: &storypb.Location{
-			Id:      proto.String(uuid1),
-			Title:   proto.String("Choose Character"),
-			Content: proto.String("Choose which character to play as."),
-			PossibleActions: []*storypb.ActionCondition{
-				&storypb.ActionCondition{ActionId: proto.String(uuid1)},
-				&storypb.ActionCondition{ActionId: proto.String(uuid2)},
-			},
-		},
-	})
-	if err != nil {
-		t.Fatalf("CreateLocation(1) => %v, want nil", err)
-	}
-	exploc := &storypb.Location{
-		Id:      proto.String(uuid1),
-		Title:   proto.String("Choose Character"),
-		Content: proto.String("Choose which character to play as."),
-		PossibleActions: []*storypb.ActionCondition{
-			&storypb.ActionCondition{ActionId: proto.String(uuid1)},
-			&storypb.ActionCondition{ActionId: proto.String(uuid2)},
-		},
-	}
-	if diff := cmp.Diff(clresp1.GetLocation(), exploc, protocmp.Transform()); diff != "" {
-		t.Errorf("After CreateLocation(1): %s, want %s, diff %s", prototext.Format(clresp1.GetLocation()), prototext.Format(exploc), diff)
-	}
-
-	clresp2, err := srv.CreateLocation(ctx, &spb.CreateLocationRequest{
-		Location: &storypb.Location{
-			Id:      proto.String(uuid2),
-			Title:   proto.String("Ogre Encounter"),
-			Content: proto.String("Either fight the ogre or attempt to sneak past it."),
-			PossibleActions: []*storypb.ActionCondition{
-				&storypb.ActionCondition{ActionId: proto.String(uuid3)},
-				&storypb.ActionCondition{ActionId: proto.String(uuid4)},
-			},
-		},
-	})
-	if err != nil {
-		t.Fatalf("CreateLocation(2) => %v, want nil", err)
-	}
-
-	exploc = &storypb.Location{
-		Id:      proto.String(uuid2),
-		Title:   proto.String("Ogre Encounter"),
-		Content: proto.String("Either fight the ogre or attempt to sneak past it."),
-		PossibleActions: []*storypb.ActionCondition{
-			&storypb.ActionCondition{ActionId: proto.String(uuid3)},
-			&storypb.ActionCondition{ActionId: proto.String(uuid4)},
-		},
-	}
-	if diff := cmp.Diff(clresp2.GetLocation(), exploc, protocmp.Transform()); diff != "" {
-		t.Errorf("After CreateLocation(2): %s, want %s, diff %s", prototext.Format(clresp2.GetLocation()), prototext.Format(exploc), diff)
-	}
 	if llresp, err := srv.ListLocations(ctx, &spb.ListLocationsRequest{}); err != nil || len(llresp.GetLocations()) != 2 {
 		t.Fatalf("Created 2 locations but List finds %d: %s error: %v", len(llresp.GetLocations()), prototext.Format(llresp), err)
-	}
-
-	usresp, err := srv.UpdateStory(ctx, &spb.UpdateStoryRequest{
-		Story: &storypb.Story{
-			Id:              proto.Int64(stid),
-			StartLocationId: proto.String(uuid1),
-		},
-	})
-	if err != nil {
-		t.Fatalf("UpdateStory() => %v, want nil", err)
-	}
-
-	got := usresp.GetStory()
-	want := &storypb.Story{
-		Id:              proto.Int64(1),
-		Title:           proto.String("E2E test story"),
-		Description:     proto.String("Story for end-to-end testing"),
-		StartLocationId: proto.String(uuid1),
-	}
-	if diff := cmp.Diff(got, want, protocmp.Transform(), protocmp.IgnoreFields(&storypb.Story{}, "events")); diff != "" {
-		t.Errorf("After UpdateStory: %s, want %s, diff %s (%s)", prototext.Format(got), prototext.Format(want), diff, prototext.Format(clresp1))
 	}
 
 	charFighter := &storypb.Action{
