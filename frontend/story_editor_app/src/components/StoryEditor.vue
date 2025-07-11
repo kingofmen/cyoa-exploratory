@@ -94,8 +94,38 @@
             </ul>
             <p v-else class="text-gray-500 mb-4">No locations created yet.</p>
         </div>
-        <button @click="saveChanges" class="w-full">
-            Save Changes
+
+        <!-- Actions Section -->
+        <div class="mt-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-3">Actions</h3>
+            <button
+                @click="createNewAction"
+                class="mb-4 px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50">
+                Create New Action
+            </button>
+            <div v-if="currentAction" class="mt-4 p-4 border border-gray-300 rounded-md bg-white">
+                <ActionEditor
+                    :action="currentAction"
+                    :availableLocations="content.locations"
+                    @save-action="handleSaveAction"
+                    @cancel-edit="handleCancelActionEdit" />
+            </div>
+            <ul v-if="content.actions && content.actions.length" class="list-disc pl-5 mb-4">
+                <li v-for="(action, index) in content.actions" :key="action.id || index" class="mb-2 flex justify-between items-center">
+                    <span>{{ action.title }}</span>
+                    <button
+                        @click="editAction(action)"
+                        class="ml-2 px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 text-sm"
+                    >
+                        Edit
+                    </button>
+                </li>
+            </ul>
+            <p v-else class="text-gray-500 mb-4">No actions created yet.</p>
+        </div>
+
+        <button @click="saveChanges" class="w-full mt-8 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50">
+            Save Story Changes
         </button>
         <p v-if="message" :class="['mt-4 text-sm', messageType === 'success' ? 'text-green-600' : 'text-red-600']">
             {{ message }}
@@ -104,7 +134,8 @@
 </template>
 
 <script>
-import TriggerActionEditor from './TriggerActionEditor.vue'; // Import the new component
+import TriggerActionEditor from './TriggerActionEditor.vue';
+import ActionEditor from './ActionEditor.vue';
 
 export default {
     data() {
@@ -112,101 +143,151 @@ export default {
         const initialStory = window.initialStoryData || {
             title: 'New Story Title',
             description: 'Story introduction.',
-	    startLocationId: '',
+            startLocationId: '',
+            events: [],
         };
-	let initialContent = window.initialContentData || {
-                locations: [],
-	}
+        let initialContent = window.initialContentData || {
+            locations: [],
+            actions: [],
+        };
 
-        // Ensure locations is initialized if not present.
+        // Ensure locations and actions are initialized if not present.
         if (!initialContent.locations) {
             initialContent.locations = [];
         }
+        if (!initialContent.actions) {
+            initialContent.actions = [];
+        }
 
-	let sloc = null;
-	for (const loc of initialContent.locations) {
-	  if (loc.id == initialStory.startLocationId) {
-	    sloc = loc
-	    break
-	  }
-	}
+        let sloc = null;
+        if (initialStory.startLocationId && initialContent.locations) {
+            for (const loc of initialContent.locations) {
+                if (loc.id == initialStory.startLocationId) {
+                    sloc = loc;
+                    break;
+                }
+            }
+        }
+
+        // Ensure storyEvents is initialized.
+        const storyEvents = initialStory.events || [];
 
         return {
             story: {
-	        id: initialStory.id,
+                id: initialStory.id,
                 title: initialStory.title,
                 description: initialStory.description,
-		startLocationId: initialStory.startLocationId,
+                startLocationId: initialStory.startLocationId,
             },
             content: initialContent,
             currentLocation: initialContent.locations.length > 0 ? initialContent.locations[0] : null,
-	    startLocation: sloc,
-            storyEvents: initialStory.events || [],
-            currentEvent: null, // For editing a specific event
+            startLocation: sloc,
+            storyEvents: storyEvents, // Global events for the story.
+            currentEvent: null, // For editing a specific global event.
+            currentAction: null, // For editing a specific action.
             message: '',
             messageType: ''
         };
     },
     components: {
-      TriggerActionEditor, // Register the new component
+      TriggerActionEditor,
+      ActionEditor,
     },
     methods: {
         initializeNewEvent() {
             return {
                 id: crypto.randomUUID(), // Temporary frontend ID
-                condition: null, // Will be initialized in PredicateEditor or by button
+                condition: null,
                 effects: [],
                 isFinal: false,
             };
         },
         createNewEvent() {
             const newEvent = this.initializeNewEvent();
-            if (!this.storyEvents) {
+            if (!this.storyEvents) { // Should be initialized in data, but defensive check.
                 this.storyEvents = [];
             }
             this.storyEvents.push(newEvent);
             this.currentEvent = newEvent;
-            this.message = 'New event created. Configure its details below.';
+            this.message = 'New global event ready for configuration.';
             this.messageType = '';
         },
         editEvent(event) {
             this.currentEvent = event;
         },
         handleSaveEvent(updatedEvent) {
-            const index = this.storyEvents.findIndex(e => e.id === updatedEvent.id || (this.currentEvent && e === this.currentEvent)); // Handle new vs existing
+            const index = this.storyEvents.findIndex(e => e.id === updatedEvent.id || (this.currentEvent && e === this.currentEvent));
             if (index !== -1) {
                 this.storyEvents.splice(index, 1, updatedEvent);
             } else {
-                // This case should ideally not happen if currentEvent was set correctly
                 this.storyEvents.push(updatedEvent);
             }
             this.currentEvent = null; // Close editor
-            this.message = 'Event saved at index ' + index;
+            this.message = 'Global event saved.';
             this.messageType = 'success';
         },
         handleCancelEventEdit() {
-            // If it was a new event that wasn't fully saved, consider removing it or reverting
-            // For simplicity now, just closes the editor
+            // Close the editor.
             this.currentEvent = null;
         },
+
+        // Location Methods
         createNewLocation() {
             const newLocation = {
                 id: crypto.randomUUID(),
-                title: "Default Location title",
-		content: "Description goes here",
+                title: "Default Location Title",
+                content: "Description goes here",
             };
-            this.content.locations.push(newLocation);
-            this.currentLocation = newLocation; // Select the new location for editing
-            this.message = 'New location created';
+	    this.content.locations.push(newLocation);
+            this.currentLocation = newLocation;
+            this.message = 'New location created.';
             this.messageType = '';
         },
         editLocation(location) {
-            this.currentLocation = location;
+	    this.currentLocation = location;
         },
+
         setStartingLocation(location) {
             this.story.startLocationId = location.id;
-	    this.startLocation = location
+            this.startLocation = location;
         },
+
+        // Action Methods
+        initializeNewAction() {
+            return {
+                id: crypto.randomUUID(),
+                title: 'New Action Title',
+                description: 'Action description.',
+                triggers: [],
+            };
+        },
+        createNewAction() {
+            const newAction = this.initializeNewAction();
+            // Do not add to list yet, only set as current for editing
+            this.currentAction = newAction;
+            this.message = 'New action ready for configuration.';
+            this.messageType = '';
+        },
+        editAction(action) {
+            this.currentAction = JSON.parse(JSON.stringify(action)); // Edit a copy
+            this.message = '';
+        },
+        handleSaveAction(updatedAction) {
+            const index = this.content.actions.findIndex(a => a.id === updatedAction.id);
+            if (index !== -1) {
+                this.content.actions.splice(index, 1, updatedAction);
+            } else {
+                this.content.actions.push(updatedAction);
+            }
+            this.currentAction = null; // Close editor
+            this.message = 'Action saved.';
+            this.messageType = 'success';
+        },
+        handleCancelActionEdit() {
+            this.currentAction = null;
+        },
+
+        // Save to backend.
         async saveChanges() {
             this.message = 'Saving...';
             this.messageType = '';
@@ -217,9 +298,9 @@ export default {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-		      story: { ...this.story, events: this.storyEvents }, // Include events
-		      content: this.content,
-		    }),
+                      story: { ...this.story, events: this.storyEvents },
+                      content: this.content,
+                    }),
                 });
 
                 if (response.ok) {
@@ -227,8 +308,8 @@ export default {
                     console.log('Save successful:', result);
                     this.message = 'Changes saved successfully!';
                     this.messageType = 'success';
-		    this.story = result.story
-		    this.content = result.content
+                    this.story = result.story
+                    this.content = result.content
                 } else {
                     const errorText = await response.text();
                     console.error('Failed to save changes:', response.status, errorText);
