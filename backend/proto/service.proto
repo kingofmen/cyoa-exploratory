@@ -69,7 +69,8 @@ message ListLocationsResponse{
 }
 
 message StoryContent {
-  repeated story.Location locations = 2;
+  repeated story.Location locations = 1;
+  repeated story.Action actions = 2;
 }
 
 // UpdateStory creates-or-updates the provided story.
