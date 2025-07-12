@@ -27,6 +27,7 @@ const (
 	VueEditStoryURL        = "/edit_story"
 	CreateOrUpdateStoryURL = "/api/story/update"
 	DeleteStoryURL         = "/api/story/delete"
+	CreateGameURL          = "/play"
 
 	createCtx  = "create"
 	updateCtx  = "update"
@@ -45,6 +46,7 @@ type indexData struct {
 	CurrentContentJSON string
 	EditStoryURI       string
 	DeleteStoryURI     string
+	PlayStoryURI       string
 	StoryIdKey         string
 
 	CreateLocTitle   string
@@ -58,8 +60,7 @@ type indexData struct {
 // Handler handles incoming requests. It implements http.Handler.
 type Handler struct {
 	index    *template.Template
-	location *template.Template
-	vuetmpl  *template.Template
+	editTmpl *template.Template
 	client   spb.CyoaClient
 }
 
@@ -67,8 +68,7 @@ type Handler struct {
 func NewHandler(cl spb.CyoaClient) *Handler {
 	return &Handler{
 		index:    template.Must(template.ParseFiles("frontend/content/index.html")),
-		location: template.Must(template.ParseFiles("frontend/content/location.html")),
-		vuetmpl:  template.Must(template.ParseFiles("frontend/story_editor_app/dist/story_editor.html")),
+		editTmpl: template.Must(template.ParseFiles("frontend/story_editor_app/dist/story_editor.html")),
 		client:   cl,
 	}
 }
@@ -81,6 +81,7 @@ func makeIndexData() indexData {
 	return indexData{
 		Timestamp:      fmt.Sprintf("%s", time.Now()),
 		EditStoryURI:   VueEditStoryURL,
+		PlayStoryURI:   CreateGameURL,
 		DeleteStoryURI: DeleteStoryURL,
 		StoryIdKey:     storyIdKey,
 	}
@@ -200,20 +201,19 @@ func prettyPrint(prefix string, bts []byte) {
 // EditStoryHandler handles the experimental Vue story editor.
 func (h *Handler) EditStoryHandler(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
-	params := req.URL.Query()
 	data := makeIndexData()
-	if strid := params.Get(storyIdKey); len(strid) > 0 {
-		sid, err := strconv.ParseInt(strid, 10, 64)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Cannot edit story with bad ID %q: %v", strid, err), http.StatusBadRequest)
-			return
-		}
+	sid, err := getStoryId(req)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Cannot get story ID to edit: %v", err), http.StatusBadRequest)
+		return
+	}
+	if sid > 0 {
 		resp, err := h.client.GetStory(ctx, &spb.GetStoryRequest{
 			Id:   proto.Int64(sid),
 			View: spb.StoryView_VIEW_CONTENT.Enum(),
 		})
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Cannot find story with ID %q: %v", strid, err), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Cannot find story with ID %d: %v", sid, err), http.StatusBadRequest)
 			return
 		}
 
@@ -231,7 +231,7 @@ func (h *Handler) EditStoryHandler(w http.ResponseWriter, req *http.Request) {
 		}
 		data.CurrentContentJSON = string(bts)
 	}
-	if err := h.vuetmpl.Execute(w, data); err != nil {
+	if err := h.editTmpl.Execute(w, data); err != nil {
 		log.Printf("Template execution error: %v", err)
 	}
 }
