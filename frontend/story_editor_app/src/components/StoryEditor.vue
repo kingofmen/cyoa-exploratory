@@ -57,39 +57,29 @@
                 class="mb-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
                 Create New Location
             </button>
-            <div v-if="currentLocation" class="mt-4 p-4 border border-gray-300 rounded-md bg-white">
-                <h4 class="text-lg font-medium text-gray-800 mb-2">Edit Location: {{ currentLocation.title }}</h4>
-                <label :for="'locationTitle-' + currentLocation.id" class="block text-sm font-medium text-gray-700 mb-1">Title:</label>
-                <input
-                    :id="'locationTitle-' + currentLocation.id"
-                    type="text"
-                    v-model="currentLocation.title"
-                    placeholder="Enter location title"
-                    class="focus:ring-indigo-500 focus:border-indigo-500 w-full"
-                />
-                <textarea
-                    :id="'locationContent-' + currentLocation.id"
-                    v-model="currentLocation.content"
-                    placeholder="Enter location description"
-                    rows="4"
-                    class="focus:ring-indigo-500 focus:border-indigo-500 w-full"
-                ></textarea>
-            </div>
+            <LocationEditor
+                v-if="currentLocation"
+                :location="currentLocation"
+                @save-location="handleSaveLocation"
+                @cancel-edit="handleCancelLocationEdit"
+            />
             <ul v-if="content.locations && content.locations.length" class="list-disc pl-5 mb-4">
                 <li v-for="location in content.locations" :key="location.id" class="mb-2 flex justify-between items-center">
                     <span>{{ location.title }}</span>
-                    <button
-                        @click="editLocation(location)"
-                        class="ml-2 px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 text-sm"
-                    >
-                        Edit
-                    </button>
-                    <button
-                        @click="setStartingLocation(location)"
-                        class="ml-2 px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 text-sm"
-                    >
+                    <div>
+                        <button
+                            @click="editLocation(location)"
+                            class="ml-2 px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 text-sm"
+                        >
+                            Edit
+                        </button>
+                        <button
+                            @click="setStartingLocation(location)"
+                            class="ml-2 px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 text-sm"
+                        >
                         Set as Start
-                    </button>
+                        </button>
+                    </div>
                 </li>
             </ul>
             <p v-else class="text-gray-500 mb-4">No locations created yet.</p>
@@ -136,8 +126,14 @@
 <script>
 import TriggerActionEditor from './TriggerActionEditor.vue';
 import ActionEditor from './ActionEditor.vue';
+import LocationEditor from './LocationEditor.vue';
 
 export default {
+    components: {
+      TriggerActionEditor,
+      ActionEditor,
+      LocationEditor,
+    },
     data() {
         // Initialize story data from window.initialStoryData if available, otherwise use defaults.
         const initialStory = window.initialStoryData || {
@@ -180,23 +176,20 @@ export default {
                 startLocationId: initialStory.startLocationId,
             },
             content: initialContent,
-            currentLocation: initialContent.locations.length > 0 ? initialContent.locations[0] : null,
             startLocation: sloc,
-            storyEvents: storyEvents, // Global events for the story.
-            currentEvent: null, // For editing a specific global event.
-            currentAction: null, // For editing a specific action.
+            storyEvents: storyEvents,
+	    // Editing scratch spaces.
+            currentLocation: null,
+            currentEvent: null,
+            currentAction: null,
             message: '',
             messageType: ''
         };
     },
-    components: {
-      TriggerActionEditor,
-      ActionEditor,
-    },
     methods: {
         initializeNewEvent() {
             return {
-                id: crypto.randomUUID(), // Temporary frontend ID
+                id: crypto.randomUUID(),
                 condition: null,
                 effects: [],
                 isFinal: false,
@@ -233,20 +226,39 @@ export default {
 
         // Location Methods
         createNewLocation() {
-            const newLocation = {
+            // This just sets up a template for the LocationEditor to use.
+            // Addition to the list happens in handleSaveLocation.
+            this.currentLocation = {
                 id: crypto.randomUUID(),
-                title: "Default Location Title",
-                content: "Description goes here",
+                title: "New Location Title",
+                content: "Location description...",
             };
-	    this.content.locations.push(newLocation);
-            this.currentLocation = newLocation;
-            this.message = 'New location created.';
+            this.message = 'New location ready for editing.';
             this.messageType = '';
         },
         editLocation(location) {
-	    this.currentLocation = location;
+            // Create a copy to avoid direct modification if the user cancels
+            this.currentLocation = JSON.parse(JSON.stringify(location));
+            this.message = ''; // Clear previous messages
         },
-
+        handleSaveLocation(locationData) {
+            const index = this.content.locations.findIndex(loc => loc.id === locationData.id);
+            if (index !== -1) {
+                // Update existing location
+                this.content.locations.splice(index, 1, locationData);
+            } else {
+                // Add new location
+                this.content.locations.push(locationData);
+            }
+            this.currentLocation = null; // Close editor
+            this.message = 'Location saved successfully.';
+            this.messageType = 'success';
+        },
+        handleCancelLocationEdit() {
+            this.currentLocation = null; // Close editor
+            this.message = 'Location editing cancelled.';
+            this.messageType = '';
+        },
         setStartingLocation(location) {
             this.story.startLocationId = location.id;
             this.startLocation = location;

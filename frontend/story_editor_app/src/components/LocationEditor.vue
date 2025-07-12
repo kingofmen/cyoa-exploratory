@@ -1,0 +1,73 @@
+<template>
+  <div class="mt-4 p-4 border border-gray-300 rounded-md bg-white">
+    <h4 class="text-lg font-medium text-gray-800 mb-2">Edit Location: {{ editingLocation.title }}</h4>
+    <label :for="'locationTitle-' + editingLocation.id" class="block text-sm font-medium text-gray-700 mb-1">Title:</label>
+    <input
+        :id="'locationTitle-' + editingLocation.id"
+        type="text"
+        v-model="editingLocation.title"
+        placeholder="Enter location title"
+        class="focus:ring-indigo-500 focus:border-indigo-500 w-full mb-3"
+    />
+    <label :for="'locationContent-' + editingLocation.id" class="block text-sm font-medium text-gray-700 mb-1">Description:</label>
+    <textarea
+        :id="'locationContent-' + editingLocation.id"
+        v-model="editingLocation.content"
+        placeholder="Enter location description"
+        rows="4"
+        class="focus:ring-indigo-500 focus:border-indigo-500 w-full mb-3"
+    ></textarea>
+    <div class="flex justify-end space-x-2">
+        <button
+            @click="saveLocation"
+            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+            Save Location
+        </button>
+        <button
+            @click="cancelEdit"
+            class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:ring-opacity-50">
+            Cancel
+        </button>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  props: {
+    location: {
+      type: Object,
+      required: true,
+    },
+  },
+  data() {
+    return {
+      // Create a local copy to prevent modifying the prop directly
+      editingLocation: null,
+    };
+  },
+  watch: {
+    location: {
+      immediate: true, // Trigger the watcher upon component creation
+      handler(newLocation) {
+        // Update the local copy when the prop changes
+        this.editingLocation = newLocation ? { ...newLocation } : null;
+      }
+    }
+  },
+  methods: {
+    saveLocation() {
+      if (this.editingLocation) {
+        this.$emit('save-location', this.editingLocation);
+      }
+    },
+    cancelEdit() {
+      this.$emit('cancel-edit');
+    },
+  },
+};
+</script>
+
+<style scoped>
+/* Scoped styles for LocationEditor can go here if needed */
+</style>
