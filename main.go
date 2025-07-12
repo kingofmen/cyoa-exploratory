@@ -224,6 +224,7 @@ func main() {
 	httpMux.HandleFunc(server.VueEditStoryURL, feRoot.EditStoryHandler)
 	httpMux.HandleFunc(server.DeleteStoryURL, feRoot.DeleteStoryHandler)
 	httpMux.HandleFunc(server.CreateGameURL, feRoot.CreatePlaythroughHandler)
+	httpMux.HandleFunc(server.PlayGameURL, feRoot.PlayGameHandler)
 	httpMux.Handle("/", feRoot)
 
 	// For loading internal files e.g. JavaScript.

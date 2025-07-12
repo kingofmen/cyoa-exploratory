@@ -7,19 +7,20 @@
 <body>
     <h1>This is my Hello Story Editor page.</h1>
     <p>This is not quite so bare bones now! I now display a list of
-    stories with edit and delete links. Play links remain TODO. The current time is
+    stories with play, edit, and delete links. The current time is
       {{.Timestamp}}.</p>
 
     <h1>Stories</h1>
       {{- $strIdKey  := .StoryIdKey -}}
       {{- $editURI   := .EditStoryURI -}}
+      {{- $playURI   := .CreateStoryURI -}}
       {{- $deleteURI := .DeleteStoryURI -}}
       <a href="{{$editURI}}">Create New</a><br /><br />
       {{ range $str  := .Stories }}
       <details>
         <summary>
 	  {{ $str.Title }}
-	  Play
+	  <a href="{{$playURI}}?{{$strIdKey}}={{$str.Id}}">Play</a>
 	  <a href="{{$editURI}}?{{$strIdKey}}={{$str.Id}}">Edit</a>
 	  <a href="{{$deleteURI}}?{{$strIdKey}}={{$str.Id}}">Delete</a>
 	</summary>

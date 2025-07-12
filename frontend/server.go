@@ -27,7 +27,8 @@ const (
 	VueEditStoryURL        = "/edit_story"
 	CreateOrUpdateStoryURL = "/api/story/update"
 	DeleteStoryURL         = "/api/story/delete"
-	CreateGameURL          = "/play"
+	CreateGameURL          = "/api/game/create"
+	PlayGameURL            = "/play"
 
 	createCtx  = "create"
 	updateCtx  = "update"
@@ -45,8 +46,9 @@ type indexData struct {
 	CurrentStoryJSON   string
 	CurrentContentJSON string
 	EditStoryURI       string
-	DeleteStoryURI     string
 	PlayStoryURI       string
+	DeleteStoryURI     string
+	CreateStoryURI     string
 	StoryIdKey         string
 
 	CreateLocTitle   string
@@ -61,6 +63,7 @@ type indexData struct {
 type Handler struct {
 	index    *template.Template
 	editTmpl *template.Template
+	playTmpl *template.Template
 	client   spb.CyoaClient
 }
 
@@ -69,6 +72,7 @@ func NewHandler(cl spb.CyoaClient) *Handler {
 	return &Handler{
 		index:    template.Must(template.ParseFiles("frontend/content/index.html")),
 		editTmpl: template.Must(template.ParseFiles("frontend/story_editor_app/dist/story_editor.html")),
+		playTmpl: template.Must(template.ParseFiles("frontend/content/game.html")),
 		client:   cl,
 	}
 }
@@ -81,7 +85,8 @@ func makeIndexData() indexData {
 	return indexData{
 		Timestamp:      fmt.Sprintf("%s", time.Now()),
 		EditStoryURI:   VueEditStoryURL,
-		PlayStoryURI:   CreateGameURL,
+		PlayStoryURI:   PlayGameURL,
+		CreateStoryURI: CreateGameURL,
 		DeleteStoryURI: DeleteStoryURL,
 		StoryIdKey:     storyIdKey,
 	}
@@ -97,7 +102,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	data := makeIndexData()
 	data.Stories = strResp.GetStories()
 	if err := h.index.Execute(w, data); err != nil {
-		log.Printf("Template error: %v", err)
+		log.Printf("Index template error: %v", err)
 	}
 }
 
@@ -232,7 +237,7 @@ func (h *Handler) EditStoryHandler(w http.ResponseWriter, req *http.Request) {
 		data.CurrentContentJSON = string(bts)
 	}
 	if err := h.editTmpl.Execute(w, data); err != nil {
-		log.Printf("Template execution error: %v", err)
+		log.Printf("Edit template execution error: %v", err)
 	}
 }
 
