@@ -12,7 +12,7 @@
         />
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">New Location ID:</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1">New Location:</label>
         <select
           v-model="localEffect.newLocationId"
           @change="updateEffect"

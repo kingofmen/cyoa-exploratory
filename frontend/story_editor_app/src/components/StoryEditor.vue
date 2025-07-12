@@ -21,8 +21,18 @@
                 class="focus:ring-indigo-500 focus:border-indigo-500"
             ></textarea>
         </div>
-        <div v-if="startLocation" class="mb-6 text-left">
-            <h4 class="text-lg font-medium text-gray-800 mb-2">Starting Location: {{ startLocation.title }}</h4>
+        <div class="mb-6 text-left">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Starting location:</label>
+          <select
+            v-model="startLocation"
+	    @change="setStartingLocation"
+            class="input-field"
+          >
+            <option value="">--- Select Location ---</option>
+            <option v-for="location in content.locations" :key="location.id" :value="location">
+              {{ location.title }}
+            </option>
+          </select>
         </div>
 
         <!-- Events Section -->
@@ -72,12 +82,6 @@
                             class="ml-2 px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 text-sm"
                         >
                             Edit
-                        </button>
-                        <button
-                            @click="setStartingLocation(location)"
-                            class="ml-2 px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 text-sm"
-                        >
-                        Set as Start
                         </button>
                     </div>
                 </li>
@@ -241,6 +245,9 @@ export default {
             this.currentLocation = JSON.parse(JSON.stringify(location));
             this.message = ''; // Clear previous messages
         },
+        setStartingLocation() {
+            this.story.startLocationId = this.startLocation.id;
+        },
         handleSaveLocation(locationData) {
             const index = this.content.locations.findIndex(loc => loc.id === locationData.id);
             if (index !== -1) {
@@ -258,10 +265,6 @@ export default {
             this.currentLocation = null; // Close editor
             this.message = 'Location editing cancelled.';
             this.messageType = '';
-        },
-        setStartingLocation(location) {
-            this.story.startLocationId = location.id;
-            this.startLocation = location;
         },
 
         // Action Methods
