@@ -197,8 +197,8 @@ func prettyPrint(prefix string, bts []byte) {
 	}
 }
 
-// VueExperimentalHandler handles the experimental Vue story editor.
-func (h *Handler) VueExperimentalHandler(w http.ResponseWriter, req *http.Request) {
+// EditStoryHandler handles the experimental Vue story editor.
+func (h *Handler) EditStoryHandler(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	params := req.URL.Query()
 	data := makeIndexData()

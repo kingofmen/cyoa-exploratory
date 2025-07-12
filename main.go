@@ -221,7 +221,7 @@ func main() {
 	httpMux.HandleFunc(server.CreateLocationURL, feRoot.CreateLocation)
 	httpMux.HandleFunc(server.UpdateLocationURL, feRoot.UpdateLocationHandler)
 	httpMux.HandleFunc(server.CreateOrUpdateStoryURL, feRoot.CreateOrUpdateStoryHandler)
-	httpMux.HandleFunc(server.VueEditStoryURL, feRoot.VueExperimentalHandler)
+	httpMux.HandleFunc(server.VueEditStoryURL, feRoot.EditStoryHandler)
 	httpMux.HandleFunc(server.DeleteStoryURL, feRoot.DeleteStoryHandler)
 	httpMux.Handle("/", feRoot)
 
