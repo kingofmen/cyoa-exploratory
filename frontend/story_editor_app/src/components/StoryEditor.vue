@@ -25,7 +25,7 @@
           <label class="block text-sm font-medium text-gray-700 mb-1">Starting location:</label>
           <select
             v-model="startLocation"
-	    @change="setStartingLocation"
+            @change="setStartingLocation"
             class="input-field"
           >
             <option value="">--- Select Location ---</option>
@@ -70,6 +70,7 @@
             <LocationEditor
                 v-if="currentLocation"
                 :location="currentLocation"
+                :available-actions="content.actions"
                 @save-location="handleSaveLocation"
                 @cancel-edit="handleCancelLocationEdit"
             />
@@ -182,7 +183,7 @@ export default {
             content: initialContent,
             startLocation: sloc,
             storyEvents: storyEvents,
-	    // Editing scratch spaces.
+            // Editing scratch spaces.
             currentLocation: null,
             currentEvent: null,
             currentAction: null,
