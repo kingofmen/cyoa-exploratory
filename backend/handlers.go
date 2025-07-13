@@ -382,9 +382,12 @@ func validateAction(ctx context.Context, db *sql.DB, gid int64, aid string) (*st
 	if err != nil {
 		return nil, txnError(fmt.Sprintf("could not find story %d for playthrough %d", sid, gid), txn, err)
 	}
-	act, err := loadAction(ctx, txn, aid)
-	if err != nil {
-		return nil, txnError(fmt.Sprintf("could not find action %s for playthrough %d of story %d", aid, gid, sid), txn, err)
+	var act *storypb.Action
+	if len(aid) > 0 {
+		act, err = loadAction(ctx, txn, aid)
+		if err != nil {
+			return nil, txnError(fmt.Sprintf("could not find action %s for playthrough %d of story %d", aid, gid, sid), txn, err)
+		}
 	}
 	lid := game.GetLocationId()
 	loc, err := loadLocation(ctx, txn, lid)

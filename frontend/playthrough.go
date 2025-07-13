@@ -21,7 +21,7 @@ type playData struct {
 func (h *Handler) CreatePlaythroughHandler(w http.ResponseWriter, req *http.Request) {
 	sid, err := getStoryId(req)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Cannot parse story ID to play: %v", err), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Cannot parse story ID to create playthrough: %v", err), http.StatusBadRequest)
 		return
 	}
 
@@ -38,9 +38,24 @@ func (h *Handler) CreatePlaythroughHandler(w http.ResponseWriter, req *http.Requ
 }
 
 func (h *Handler) PlayGameHandler(w http.ResponseWriter, req *http.Request) {
+	gid, err := getGameId(req)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Cannot parse game ID to play: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	ctx := req.Context()
+	resp, err := h.client.PlayerAction(ctx, &spb.PlayerActionRequest{
+		GameId: proto.Int64(gid),
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Cannot load playthrough %d: %v", gid, err), http.StatusInternalServerError)
+		return
+	}
+
 	data := &playData{
 		Timestamp:  fmt.Sprintf("%s", time.Now()),
-		StoryTitle: "Placeholder Title",
+		StoryTitle: fmt.Sprintf("Playthrough %d of story %d", gid, resp.GetGameState().GetStoryId()),
 	}
 	if err := h.playTmpl.Execute(w, data); err != nil {
 		log.Printf("Play template execution error: %v", err)

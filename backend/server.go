@@ -285,32 +285,37 @@ func (s *Server) PlayerAction(ctx context.Context, req *spb.PlayerActionRequest)
 	if gid < 1 {
 		return nil, fmt.Errorf("PlayerAction called with bad game ID %d", gid)
 	}
-	if err := uuid.Validate(aid); err != nil {
-		return nil, fmt.Errorf("invalid action ID %q: %w", aid, err)
+	if len(aid) > 0 {
+		if err := uuid.Validate(aid); err != nil {
+			return nil, fmt.Errorf("invalid action ID %q: %w", aid, err)
+		}
 	}
 
 	event, err := validateAction(ctx, s.db, gid, aid)
 	if err != nil {
 		return nil, fmt.Errorf("could not validate action %s in game %d: %w", aid, gid, err)
 	}
+	updated := event.GetGameSnapshot()
 
-	updated, err := story.HandleEvent(event)
-	if err != nil {
-		return nil, fmt.Errorf("could not apply action %s in game %d: %w", aid, gid, err)
-	}
+	if event.GetAction() != nil {
+		updated, err = story.HandleEvent(event)
+		if err != nil {
+			return nil, fmt.Errorf("could not apply action %s in game %d: %w", aid, gid, err)
+		}
 
-	content, err := s.narrator.Event(ctx, event)
-	if err != nil {
-		return nil, fmt.Errorf("could not narrate action %s in game %d: %w", aid, gid, err)
-	}
+		content, err := s.narrator.Event(ctx, event)
+		if err != nil {
+			return nil, fmt.Errorf("could not narrate action %s in game %d: %w", aid, gid, err)
+		}
 
-	event.GameSnapshot = updated
-	if nn := event.GetNarration(); len(nn) > 0 {
-		content = strings.Join([]string{nn, content}, "\n")
-	}
-	event.Narration = proto.String(content)
-	if err := writeAction(ctx, s.db, event); err != nil {
-		return nil, fmt.Errorf("PlayerAction error: %w", err)
+		event.GameSnapshot = updated
+		if nn := event.GetNarration(); len(nn) > 0 {
+			content = strings.Join([]string{nn, content}, "\n")
+		}
+		event.Narration = proto.String(content)
+		if err := writeAction(ctx, s.db, event); err != nil {
+			return nil, fmt.Errorf("PlayerAction error: %w", err)
+		}
 	}
 
 	return &spb.PlayerActionResponse{
