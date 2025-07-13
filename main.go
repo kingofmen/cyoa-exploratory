@@ -146,6 +146,13 @@ func (fc *FakeClient) CreateGame(ctx context.Context, in *spb.CreateGameRequest,
 	return fc.root.CreateGame(ctx, in)
 }
 
+func (fc *FakeClient) ListGames(ctx context.Context, in *spb.ListGamesRequest, opts ...grpc.CallOption) (*spb.ListGamesResponse, error) {
+	if err := fc.validate(); err != nil {
+		return nil, err
+	}
+	return fc.root.ListGames(ctx, in)
+}
+
 func (fc *FakeClient) PlayerAction(ctx context.Context, in *spb.PlayerActionRequest, opts ...grpc.CallOption) (*spb.PlayerActionResponse, error) {
 	if err := fc.validate(); err != nil {
 		return nil, err
@@ -221,7 +228,7 @@ func main() {
 	httpMux.HandleFunc(server.CreateLocationURL, feRoot.CreateLocation)
 	httpMux.HandleFunc(server.UpdateLocationURL, feRoot.UpdateLocationHandler)
 	httpMux.HandleFunc(server.CreateOrUpdateStoryURL, feRoot.CreateOrUpdateStoryHandler)
-	httpMux.HandleFunc(server.VueEditStoryURL, feRoot.EditStoryHandler)
+	httpMux.HandleFunc(server.EditStoryURL, feRoot.EditStoryHandler)
 	httpMux.HandleFunc(server.DeleteStoryURL, feRoot.DeleteStoryHandler)
 	httpMux.HandleFunc(server.CreateGameURL, feRoot.CreatePlaythroughHandler)
 	httpMux.HandleFunc(server.PlayGameURL, feRoot.PlayGameHandler)

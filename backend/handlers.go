@@ -332,6 +332,40 @@ func createGameImpl(ctx context.Context, db *sql.DB, sid int64) (*spb.CreateGame
 	}, nil
 }
 
+func listGamesImpl(ctx context.Context, db *sql.DB, req *spb.ListGamesRequest) (*spb.ListGamesResponse, error) {
+	resp := &spb.ListGamesResponse{
+		Games: make([]*storypb.Playthrough, 0, 10),
+	}
+	txn, err := db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		return nil, fmt.Errorf("could not begin transaction: %w", err)
+	}
+	rows, err := txn.QueryContext(ctx, `SELECT l.id, l.proto FROM Playthroughs AS l ORDER BY l.id ASC`)
+	if err != nil {
+		return nil, txnError("could not list playthroughs", txn, err)
+	}
+	for rows.Next() {
+		var id int64
+		blob := []byte{}
+		if err := rows.Scan(&id, &blob); err != nil {
+			return nil, txnError("error scanning playthrough", txn, err)
+		}
+		gam := &storypb.Playthrough{}
+		if err := proto.Unmarshal(blob, gam); err != nil {
+			return nil, txnError(fmt.Sprintf("could not unmarshal playthrough %d", id), txn, err)
+		}
+		// Clone a limited view.
+		resp.Games = append(resp.Games, &storypb.Playthrough{
+			Id:      proto.Int64(id),
+			StoryId: proto.Int64(gam.GetStoryId()),
+		})
+	}
+	if err := txn.Commit(); err != nil {
+		return nil, txnError("could not commit query", txn, err)
+	}
+	return resp, nil
+}
+
 // validateAction loads the action, location, game, and story for a player input.
 // It is read-only.
 func validateAction(ctx context.Context, db *sql.DB, gid int64, aid string) (*storypb.GameEvent, error) {

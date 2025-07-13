@@ -272,6 +272,14 @@ func (s *Server) CreateGame(ctx context.Context, req *spb.CreateGameRequest) (*s
 	return resp, nil
 }
 
+func (s *Server) ListGames(ctx context.Context, req *spb.ListGamesRequest) (*spb.ListGamesResponse, error) {
+	resp, err := listGamesImpl(ctx, s.db, req)
+	if err != nil {
+		return nil, fmt.Errorf("ListGames error: %w", err)
+	}
+	return resp, nil
+}
+
 func (s *Server) PlayerAction(ctx context.Context, req *spb.PlayerActionRequest) (*spb.PlayerActionResponse, error) {
 	gid, aid := req.GetGameId(), req.GetActionId()
 	if gid < 1 {

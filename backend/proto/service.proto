@@ -25,6 +25,7 @@ service Cyoa {
   rpc ListActions(ListActionsRequest) returns (ListActionsResponse) {}
 
   rpc CreateGame(CreateGameRequest) returns (CreateGameResponse) {}
+  rpc ListGames(ListGamesRequest) returns (ListGamesResponse) {}
   rpc PlayerAction(PlayerActionRequest) returns (PlayerActionResponse) {}
 };
 
@@ -134,6 +135,11 @@ message CreateGameRequest{
 
 message CreateGameResponse{
   int64 game_id = 1;
+}
+
+message ListGamesRequest{}
+message ListGamesResponse{
+  repeated story.Playthrough games = 1;
 }
 
 message PlayerActionRequest{

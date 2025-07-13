@@ -24,7 +24,7 @@ import (
 const (
 	CreateLocationURL      = "/locations/create"
 	UpdateLocationURL      = "/location/update"
-	VueEditStoryURL        = "/edit_story"
+	EditStoryURL           = "/edit_story"
 	CreateOrUpdateStoryURL = "/api/story/update"
 	DeleteStoryURL         = "/api/story/delete"
 	CreateGameURL          = "/api/game/create"
@@ -37,12 +37,14 @@ const (
 	locIdKey   = "location_id_key"
 	deleteKey  = "delete_key"
 	storyIdKey = "story_id"
+	gameIdKey  = "game_id"
 )
 
 // indexData holds data for the front page.
 type indexData struct {
 	Timestamp          string
 	Stories            []*storypb.Story
+	Games              []*gameDisplay
 	CurrentStoryJSON   string
 	CurrentContentJSON string
 	EditStoryURI       string
@@ -50,6 +52,7 @@ type indexData struct {
 	DeleteStoryURI     string
 	CreateStoryURI     string
 	StoryIdKey         string
+	GameIdKey          string
 
 	CreateLocTitle   string
 	CreateLocContent string
@@ -81,14 +84,21 @@ func makeKey(ctx, key string) string {
 	return fmt.Sprintf("%s_%s", ctx, key)
 }
 
+// gameDisplay holds information for listing playthroughs.
+type gameDisplay struct {
+	Id    int64
+	Title string
+}
+
 func makeIndexData() indexData {
 	return indexData{
 		Timestamp:      fmt.Sprintf("%s", time.Now()),
-		EditStoryURI:   VueEditStoryURL,
+		EditStoryURI:   EditStoryURL,
 		PlayStoryURI:   PlayGameURL,
 		CreateStoryURI: CreateGameURL,
 		DeleteStoryURI: DeleteStoryURL,
 		StoryIdKey:     storyIdKey,
+		GameIdKey:      gameIdKey,
 	}
 }
 
@@ -99,8 +109,25 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, fmt.Errorf("could not load stories: %w", err).Error(), http.StatusInternalServerError)
 		return
 	}
+	gamResp, err := h.client.ListGames(req.Context(), &spb.ListGamesRequest{})
+	if err != nil {
+		http.Error(w, fmt.Errorf("could not load stories: %w", err).Error(), http.StatusInternalServerError)
+		return
+	}
 	data := makeIndexData()
 	data.Stories = strResp.GetStories()
+	storyTitles := make(map[int64]string)
+	for _, str := range data.Stories {
+		storyTitles[str.GetId()] = str.GetTitle()
+	}
+	data.Games = make([]*gameDisplay, 0, len(gamResp.GetGames()))
+	for _, gam := range gamResp.GetGames() {
+		data.Games = append(data.Games, &gameDisplay{
+			Id:    gam.GetId(),
+			Title: storyTitles[gam.GetStoryId()],
+		})
+	}
+
 	if err := h.index.Execute(w, data); err != nil {
 		log.Printf("Index template error: %v", err)
 	}

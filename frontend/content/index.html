@@ -1,31 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Testing, testing</title>
+    <title>CYOAIdventure</title>
     <meta charset="utf-8">
 </head>
 <body>
-    <h1>This is my Hello Story Editor page.</h1>
-    <p>This is not quite so bare bones now! I now display a list of
-    stories with play, edit, and delete links. The current time is
-      {{.Timestamp}}.</p>
+    <h1>Frontpage for dev work</h1>
+    <p>List of stories and of games in progress. The current time is {{.Timestamp}}.</p>
+
+    {{- $strIdKey  := .StoryIdKey -}}
+    {{- $editURI   := .EditStoryURI -}}
+    {{- $ngamURI   := .CreateStoryURI -}}
+    {{- $playURI   := .PlayStoryURI -}}
+    {{- $deleteURI := .DeleteStoryURI -}}
+    {{- $gameIdKey := .GameIdKey -}}
 
     <h1>Stories</h1>
-      {{- $strIdKey  := .StoryIdKey -}}
-      {{- $editURI   := .EditStoryURI -}}
-      {{- $playURI   := .CreateStoryURI -}}
-      {{- $deleteURI := .DeleteStoryURI -}}
       <a href="{{$editURI}}">Create New</a><br /><br />
       {{ range $str  := .Stories }}
       <details>
         <summary>
 	  {{ $str.Title }}
-	  <a href="{{$playURI}}?{{$strIdKey}}={{$str.Id}}">Play</a>
+	  <a href="{{$ngamURI}}?{{$strIdKey}}={{$str.Id}}">Playthrough</a>
 	  <a href="{{$editURI}}?{{$strIdKey}}={{$str.Id}}">Edit</a>
 	  <a href="{{$deleteURI}}?{{$strIdKey}}={{$str.Id}}">Delete</a>
 	</summary>
 	{{ $str.Description }}
       </details>
       {{ end }}
+
+    <h1>Games</h1>
+      <ul>
+      {{ range $gam := .Games }}
+      <li>
+	  {{ $gam.Title }} : 
+	  <a href="{{$playURI}}?{{$gameIdKey}}={{$gam.Id}}">Play</a>
+      </li>
+      {{ end }}
+      </ul>
+
 </body>
 </html>
