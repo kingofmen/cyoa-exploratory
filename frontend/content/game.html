@@ -5,8 +5,24 @@
     <meta charset="utf-8">
 </head>
 <body>
-    <h1>This is my Hello Gameplay page.</h1>
+    <h1>{{.StoryTitle}}</h1>
     <p>The current time is {{.Timestamp}}.</p>
 
+    <h1>The Story So Far</h1>
+    <p>{{.Narration}}</p>
+
+    <h1>What Next?</h1>
+    <p>{{.Description}}</p>
+    <p>
+      {{ range $act  := .Actions }}
+      <details>
+        <summary>
+	  {{ $act.Title }}
+	</summary>
+	{{ $act.Description }}
+      </details>
+      {{ end }}
+    </p>
+    
 </body>
 </html>

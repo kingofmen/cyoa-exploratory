@@ -9,12 +9,16 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	spb "github.com/kingofmen/cyoa-exploratory/backend/proto"
+	storypb "github.com/kingofmen/cyoa-exploratory/story/proto"
 )
 
 // playData holds data for the playthrough template.
 type playData struct {
-	Timestamp  string
-	StoryTitle string
+	Timestamp   string
+	StoryTitle  string
+	Narration   string
+	Description string
+	Actions     []*storypb.Action
 }
 
 // CreatePlaythroughHandler creates a new playthrough for the requested story.
@@ -54,8 +58,11 @@ func (h *Handler) PlayGameHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	data := &playData{
-		Timestamp:  fmt.Sprintf("%s", time.Now()),
-		StoryTitle: fmt.Sprintf("Playthrough %d of story %d", gid, resp.GetGameState().GetStoryId()),
+		Timestamp:   fmt.Sprintf("%s", time.Now()),
+		StoryTitle:  fmt.Sprintf("Playthrough %d of story %d", gid, resp.GetGameState().GetStoryId()),
+		Narration:   resp.GetNarrative(),
+		Description: "Placeholder",
+		Actions:     []*storypb.Action{},
 	}
 	if err := h.playTmpl.Execute(w, data); err != nil {
 		log.Printf("Play template execution error: %v", err)
