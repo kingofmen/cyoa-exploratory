@@ -356,7 +356,7 @@ func TestStoryE2E(t *testing.T) {
 				t.Errorf("%s: CreateGame() => unexpected game ID %d, want %d", cc.desc, gid, expid)
 			}
 			for idx, actid := range cc.actions {
-				resp, err := srv.PlayerAction(ctx, &spb.PlayerActionRequest{
+				resp, err := srv.GameState(ctx, &spb.GameStateRequest{
 					GameId:   proto.Int64(gid),
 					ActionId: proto.String(actid),
 				})
@@ -366,11 +366,11 @@ func TestStoryE2E(t *testing.T) {
 				}
 				got, want := resp.GetGameState(), cc.expect[idx]
 				if diff := cmp.Diff(got, want, protocmp.Transform(), ignore); diff != "" {
-					t.Errorf("%s: PlayerAction(%d) => %s, want %s, diff %s", cc.desc, idx, prototext.Format(got), prototext.Format(want), diff)
+					t.Errorf("%s: GameState(%d) => %s, want %s, diff %s", cc.desc, idx, prototext.Format(got), prototext.Format(want), diff)
 				}
 				gn, wn := resp.GetNarrative(), cc.narrative[idx]
 				if diff := cmp.Diff(gn, wn); diff != "" {
-					t.Errorf("%s: PlayerAction(%d) => narrative %q, want %q, diff %s", cc.desc, idx, gn, wn, diff)
+					t.Errorf("%s: GameState(%d) => narrative %q, want %q, diff %s", cc.desc, idx, gn, wn, diff)
 				}
 			}
 		})

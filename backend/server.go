@@ -280,10 +280,10 @@ func (s *Server) ListGames(ctx context.Context, req *spb.ListGamesRequest) (*spb
 	return resp, nil
 }
 
-func (s *Server) PlayerAction(ctx context.Context, req *spb.PlayerActionRequest) (*spb.PlayerActionResponse, error) {
+func (s *Server) GameState(ctx context.Context, req *spb.GameStateRequest) (*spb.GameStateResponse, error) {
 	gid, aid := req.GetGameId(), req.GetActionId()
 	if gid < 1 {
-		return nil, fmt.Errorf("PlayerAction called with bad game ID %d", gid)
+		return nil, fmt.Errorf("GameState called with bad game ID %d", gid)
 	}
 	if len(aid) > 0 {
 		if err := uuid.Validate(aid); err != nil {
@@ -314,11 +314,11 @@ func (s *Server) PlayerAction(ctx context.Context, req *spb.PlayerActionRequest)
 		}
 		event.Narration = proto.String(content)
 		if err := writeAction(ctx, s.db, event); err != nil {
-			return nil, fmt.Errorf("PlayerAction error: %w", err)
+			return nil, fmt.Errorf("GameState error: %w", err)
 		}
 	}
 
-	return &spb.PlayerActionResponse{
+	return &spb.GameStateResponse{
 		GameState: updated,
 		Narrative: proto.String(event.GetNarration()),
 	}, nil

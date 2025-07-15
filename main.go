@@ -153,11 +153,11 @@ func (fc *FakeClient) ListGames(ctx context.Context, in *spb.ListGamesRequest, o
 	return fc.root.ListGames(ctx, in)
 }
 
-func (fc *FakeClient) PlayerAction(ctx context.Context, in *spb.PlayerActionRequest, opts ...grpc.CallOption) (*spb.PlayerActionResponse, error) {
+func (fc *FakeClient) GameState(ctx context.Context, in *spb.GameStateRequest, opts ...grpc.CallOption) (*spb.GameStateResponse, error) {
 	if err := fc.validate(); err != nil {
 		return nil, err
 	}
-	return fc.root.PlayerAction(ctx, in)
+	return fc.root.GameState(ctx, in)
 }
 
 func main() {

@@ -49,7 +49,7 @@ func (h *Handler) PlayGameHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	ctx := req.Context()
-	resp, err := h.client.PlayerAction(ctx, &spb.PlayerActionRequest{
+	resp, err := h.client.GameState(ctx, &spb.GameStateRequest{
 		GameId: proto.Int64(gid),
 	})
 	if err != nil {

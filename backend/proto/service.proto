@@ -26,7 +26,7 @@ service Cyoa {
 
   rpc CreateGame(CreateGameRequest) returns (CreateGameResponse) {}
   rpc ListGames(ListGamesRequest) returns (ListGamesResponse) {}
-  rpc PlayerAction(PlayerActionRequest) returns (PlayerActionResponse) {}
+  rpc GameState(GameStateRequest) returns (GameStateResponse) {}
 };
 
 enum StoryView {
@@ -142,11 +142,11 @@ message ListGamesResponse{
   repeated story.Playthrough games = 1;
 }
 
-message PlayerActionRequest{
+message GameStateRequest{
   int64 game_id = 1;
   string action_id = 2;
 }
-message PlayerActionResponse{
+message GameStateResponse{
   story.Playthrough game_state = 1;
   string narrative = 2;
 }
