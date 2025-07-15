@@ -318,8 +318,16 @@ func (s *Server) GameState(ctx context.Context, req *spb.GameStateRequest) (*spb
 		}
 	}
 
+	// Copy across only fields to be displayed.
 	return &spb.GameStateResponse{
-		GameState: updated,
-		Narrative: proto.String(event.GetNarration()),
+		State: &storypb.GameEvent{
+			Location:     event.GetLocation(),
+			GameSnapshot: updated,
+			Story: &storypb.Story{
+				Title:       proto.String(event.GetStory().GetTitle()),
+				Description: proto.String(event.GetStory().GetDescription()),
+			},
+			Narration: event.Narration,
+		},
 	}, nil
 }

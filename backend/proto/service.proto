@@ -147,6 +147,5 @@ message GameStateRequest{
   string action_id = 2;
 }
 message GameStateResponse{
-  story.Playthrough game_state = 1;
-  string narrative = 2;
+  story.GameEvent state = 1;
 }

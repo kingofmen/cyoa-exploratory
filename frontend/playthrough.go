@@ -57,12 +57,16 @@ func (h *Handler) PlayGameHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	state := resp.GetState()
 	data := &playData{
 		Timestamp:   fmt.Sprintf("%s", time.Now()),
-		StoryTitle:  fmt.Sprintf("Playthrough %d of story %d", gid, resp.GetGameState().GetStoryId()),
-		Narration:   resp.GetNarrative(),
-		Description: "Placeholder",
-		Actions:     []*storypb.Action{},
+		StoryTitle:  state.GetStory().GetTitle(),
+		Narration:   state.GetNarration(),
+		Description: state.GetLocation().GetContent(),
+		Actions:     make([]*storypb.Action, 0, len(state.GetLocation().GetPossibleActions())),
+	}
+	for _, act := range state.GetLocation().GetPossibleActions() {
+		data.Actions = append(data.Actions, &storypb.Action{Title: proto.String(act.GetActionId())})
 	}
 	if err := h.playTmpl.Execute(w, data); err != nil {
 		log.Printf("Play template execution error: %v", err)

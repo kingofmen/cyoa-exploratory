@@ -176,6 +176,24 @@ func TestStoryE2E(t *testing.T) {
 		},
 	}
 
+	chooseChar := &storypb.Location{
+		Id:      proto.String(uuid1),
+		Title:   proto.String("Choose Character"),
+		Content: proto.String("Choose which character to play as."),
+		PossibleActions: []*storypb.ActionCondition{
+			&storypb.ActionCondition{ActionId: proto.String(uuid1)},
+			&storypb.ActionCondition{ActionId: proto.String(uuid2)},
+		},
+	}
+	ogreFight := &storypb.Location{
+		Id:      proto.String(uuid2),
+		Title:   proto.String("Ogre Encounter"),
+		Content: proto.String("Either fight the ogre or attempt to sneak past it."),
+		PossibleActions: []*storypb.ActionCondition{
+			&storypb.ActionCondition{ActionId: proto.String(uuid3)},
+			&storypb.ActionCondition{ActionId: proto.String(uuid4)},
+		},
+	}
 	csresp, err := srv.UpdateStory(ctx, &spb.UpdateStoryRequest{
 		Story: &storypb.Story{
 			Title:           proto.String("E2E test story"),
@@ -217,26 +235,7 @@ func TestStoryE2E(t *testing.T) {
 			},
 		},
 		Content: &spb.StoryContent{
-			Locations: []*storypb.Location{
-				&storypb.Location{
-					Id:      proto.String(uuid1),
-					Title:   proto.String("Choose Character"),
-					Content: proto.String("Choose which character to play as."),
-					PossibleActions: []*storypb.ActionCondition{
-						&storypb.ActionCondition{ActionId: proto.String(uuid1)},
-						&storypb.ActionCondition{ActionId: proto.String(uuid2)},
-					},
-				},
-				&storypb.Location{
-					Id:      proto.String(uuid2),
-					Title:   proto.String("Ogre Encounter"),
-					Content: proto.String("Either fight the ogre or attempt to sneak past it."),
-					PossibleActions: []*storypb.ActionCondition{
-						&storypb.ActionCondition{ActionId: proto.String(uuid3)},
-						&storypb.ActionCondition{ActionId: proto.String(uuid4)},
-					},
-				},
-			},
+			Locations: []*storypb.Location{chooseChar, ogreFight},
 			Actions: []*storypb.Action{
 				charFighter, charThief, fightOgre, sneakOgre,
 			},
@@ -254,90 +253,117 @@ func TestStoryE2E(t *testing.T) {
 		t.Fatalf("Created 2 locations but List finds %d: %s error: %v", len(llresp.GetLocations()), prototext.Format(llresp), err)
 	}
 
+	displayStory := &storypb.Story{
+		Title:       proto.String("E2E test story"),
+		Description: proto.String("Story for end-to-end testing"),
+	}
 	cases := []struct {
-		desc      string
-		actions   []string
-		expect    []*storypb.Playthrough
-		narrative []string
+		desc    string
+		actions []string
+		expect  []*storypb.GameEvent
 	}{
 		{
 			desc:    "Fighter, attack",
 			actions: []string{charFighter.GetId(), fightOgre.GetId()},
-			expect: []*storypb.Playthrough{
-				&storypb.Playthrough{
-					LocationId: proto.String(uuid2),
-					Values:     map[string]int64{"Strength": 5},
-					State:      storypb.RunState_RS_ACTIVE.Enum(),
+			expect: []*storypb.GameEvent{
+				&storypb.GameEvent{
+					Location: chooseChar,
+					GameSnapshot: &storypb.Playthrough{
+						LocationId: proto.String(uuid2),
+						Values:     map[string]int64{"Strength": 5},
+						State:      storypb.RunState_RS_ACTIVE.Enum(),
+					},
+					Story:     displayStory,
+					Narration: proto.String("Fighter"),
 				},
-				&storypb.Playthrough{
-					LocationId: proto.String(uuid2),
-					Values:     map[string]int64{"Strength": 5, "ogre_defeated": 1},
-					State:      storypb.RunState_RS_COMPLETE.Enum(),
+				&storypb.GameEvent{
+					Location: ogreFight,
+					GameSnapshot: &storypb.Playthrough{
+						LocationId: proto.String(uuid2),
+						Values:     map[string]int64{"Strength": 5, "ogre_defeated": 1},
+						State:      storypb.RunState_RS_COMPLETE.Enum(),
+					},
+					Story:     displayStory,
+					Narration: proto.String("Fighter\nAttack!"),
 				},
-			},
-			narrative: []string{
-				"Fighter",
-				"Fighter\nAttack!",
 			},
 		},
 		{
 			desc:    "Rogue, attack",
 			actions: []string{charThief.GetId(), fightOgre.GetId()},
-			expect: []*storypb.Playthrough{
-				&storypb.Playthrough{
-					LocationId: proto.String(uuid2),
-					Values:     map[string]int64{"Dexterity": 5},
-					State:      storypb.RunState_RS_ACTIVE.Enum(),
+			expect: []*storypb.GameEvent{
+				&storypb.GameEvent{
+					Location: chooseChar,
+					GameSnapshot: &storypb.Playthrough{
+						LocationId: proto.String(uuid2),
+						Values:     map[string]int64{"Dexterity": 5},
+						State:      storypb.RunState_RS_ACTIVE.Enum(),
+					},
+					Story:     displayStory,
+					Narration: proto.String("Rogue"),
 				},
-				&storypb.Playthrough{
-					LocationId: proto.String(uuid2),
-					Values:     map[string]int64{"Dexterity": 5, "player_killed": 1},
-					State:      storypb.RunState_RS_COMPLETE.Enum(),
+				&storypb.GameEvent{
+					Location: ogreFight,
+					GameSnapshot: &storypb.Playthrough{
+						LocationId: proto.String(uuid2),
+						Values:     map[string]int64{"Dexterity": 5, "player_killed": 1},
+						State:      storypb.RunState_RS_COMPLETE.Enum(),
+					},
+					Story:     displayStory,
+					Narration: proto.String("Rogue\nAttack!"),
 				},
-			},
-			narrative: []string{
-				"Rogue",
-				"Rogue\nAttack!",
 			},
 		},
 		{
 			desc:    "Fighter, sneak",
 			actions: []string{charFighter.GetId(), sneakOgre.GetId()},
-			expect: []*storypb.Playthrough{
-				&storypb.Playthrough{
-					LocationId: proto.String(uuid2),
-					Values:     map[string]int64{"Strength": 5},
-					State:      storypb.RunState_RS_ACTIVE.Enum(),
+			expect: []*storypb.GameEvent{
+				&storypb.GameEvent{
+					Location: chooseChar,
+					GameSnapshot: &storypb.Playthrough{
+						LocationId: proto.String(uuid2),
+						Values:     map[string]int64{"Strength": 5},
+						State:      storypb.RunState_RS_ACTIVE.Enum(),
+					},
+					Story:     displayStory,
+					Narration: proto.String("Fighter"),
 				},
-				&storypb.Playthrough{
-					LocationId: proto.String(uuid2),
-					Values:     map[string]int64{"Strength": 5, "player_killed": 1},
-					State:      storypb.RunState_RS_COMPLETE.Enum(),
+				&storypb.GameEvent{
+					Location: ogreFight,
+					GameSnapshot: &storypb.Playthrough{
+						LocationId: proto.String(uuid2),
+						Values:     map[string]int64{"Strength": 5, "player_killed": 1},
+						State:      storypb.RunState_RS_COMPLETE.Enum(),
+					},
+					Story:     displayStory,
+					Narration: proto.String("Fighter\nSlow and sneaky wins the race..."),
 				},
-			},
-			narrative: []string{
-				"Fighter",
-				"Fighter\nSlow and sneaky wins the race...",
 			},
 		},
 		{
 			desc:    "Rogue, sneak",
 			actions: []string{charThief.GetId(), sneakOgre.GetId()},
-			expect: []*storypb.Playthrough{
-				&storypb.Playthrough{
-					LocationId: proto.String(uuid2),
-					Values:     map[string]int64{"Dexterity": 5},
-					State:      storypb.RunState_RS_ACTIVE.Enum(),
+			expect: []*storypb.GameEvent{
+				&storypb.GameEvent{
+					Location: chooseChar,
+					GameSnapshot: &storypb.Playthrough{
+						LocationId: proto.String(uuid2),
+						Values:     map[string]int64{"Dexterity": 5},
+						State:      storypb.RunState_RS_ACTIVE.Enum(),
+					},
+					Story:     displayStory,
+					Narration: proto.String("Rogue"),
 				},
-				&storypb.Playthrough{
-					LocationId: proto.String(uuid2),
-					Values:     map[string]int64{"Dexterity": 5, "ogre_defeated": 1},
-					State:      storypb.RunState_RS_COMPLETE.Enum(),
+				&storypb.GameEvent{
+					Location: ogreFight,
+					GameSnapshot: &storypb.Playthrough{
+						LocationId: proto.String(uuid2),
+						Values:     map[string]int64{"Dexterity": 5, "ogre_defeated": 1},
+						State:      storypb.RunState_RS_COMPLETE.Enum(),
+					},
+					Story:     displayStory,
+					Narration: proto.String("Rogue\nSlow and sneaky wins the race..."),
 				},
-			},
-			narrative: []string{
-				"Rogue",
-				"Rogue\nSlow and sneaky wins the race...",
 			},
 		},
 	}
@@ -364,13 +390,9 @@ func TestStoryE2E(t *testing.T) {
 					t.Errorf("%s: Action %d had unexpected error %v", cc.desc, idx, err)
 					continue
 				}
-				got, want := resp.GetGameState(), cc.expect[idx]
+				got, want := resp.GetState(), cc.expect[idx]
 				if diff := cmp.Diff(got, want, protocmp.Transform(), ignore); diff != "" {
 					t.Errorf("%s: GameState(%d) => %s, want %s, diff %s", cc.desc, idx, prototext.Format(got), prototext.Format(want), diff)
-				}
-				gn, wn := resp.GetNarrative(), cc.narrative[idx]
-				if diff := cmp.Diff(gn, wn); diff != "" {
-					t.Errorf("%s: GameState(%d) => narrative %q, want %q, diff %s", cc.desc, idx, gn, wn, diff)
 				}
 			}
 		})
