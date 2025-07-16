@@ -1,20 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{.StoryTitle}}</title>
+    <title>{{.State.Story.Title}}</title>
     <meta charset="utf-8">
 </head>
 <body>
-    <h1>{{.StoryTitle}}</h1>
-    <p>The current time is {{.Timestamp}}.</p>
+    <h1>{{.State.Story.Title}}</h1>
+    <p>{{.State.Story.Description}}.</p>
 
+    {{ if .State.Narration }}
     <h1>The Story So Far</h1>
-    <p>{{.Narration}}</p>
+    <p>{{.State.Narration}}</p>
+    {{ end }}
 
     <h1>What Next?</h1>
-    <p>{{.Description}}</p>
+    <p>{{.State.Location.Description}}</p>
     <p>
-      {{ range $act  := .Actions }}
+      {{ range $act  := .State.Actions }}
       <details>
         <summary>
 	  {{ $act.Title }}
@@ -23,6 +25,6 @@
       </details>
       {{ end }}
     </p>
-    
+
 </body>
 </html>

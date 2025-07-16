@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"google.golang.org/protobuf/proto"
 
@@ -14,11 +13,7 @@ import (
 
 // playData holds data for the playthrough template.
 type playData struct {
-	Timestamp   string
-	StoryTitle  string
-	Narration   string
-	Description string
-	Actions     []*storypb.Summary
+	State *storypb.GameDisplay
 }
 
 // CreatePlaythroughHandler creates a new playthrough for the requested story.
@@ -57,13 +52,8 @@ func (h *Handler) PlayGameHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	state := resp.GetState()
 	data := &playData{
-		Timestamp:   fmt.Sprintf("%s", time.Now()),
-		StoryTitle:  state.GetStory().GetTitle(),
-		Narration:   state.GetNarration(),
-		Description: state.GetLocation().GetDescription(),
-		Actions:     state.GetActions(),
+		State: resp.GetState(),
 	}
 	if err := h.playTmpl.Execute(w, data); err != nil {
 		log.Printf("Play template execution error: %v", err)
