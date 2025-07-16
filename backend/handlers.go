@@ -67,9 +67,9 @@ func updateLocationImpl(ctx context.Context, db *sql.DB, lid string, loc *storyp
 
 	return &spb.UpdateLocationResponse{
 		Location: &storypb.Location{
-			Id:      proto.String(lid),
-			Title:   proto.String(loc.GetTitle()),
-			Content: proto.String(loc.GetContent()),
+			Id:          proto.String(lid),
+			Title:       proto.String(loc.GetTitle()),
+			Description: proto.String(loc.GetDescription()),
 		},
 	}, nil
 }
@@ -407,19 +407,14 @@ func validateAction(ctx context.Context, db *sql.DB, gid int64, aid string) (*st
 	}, nil
 }
 
-func writeAction(ctx context.Context, db *sql.DB, event *storypb.GameEvent) error {
-	game := event.GetGameSnapshot()
-	aid, gid, sid := event.GetAction().GetId(), game.GetId(), event.GetStory().GetId()
-	txn, err := db.BeginTx(ctx, nil)
+func writeAction(ctx context.Context, txn *sql.Tx, game *storypb.Playthrough, narration string) error {
+	gid := game.GetId()
 	blob, err := proto.Marshal(game)
 	if err != nil {
-		return txnError(fmt.Sprintf("could not marshal updated playthrough %d of story %d after action %s", gid, sid, aid), txn, err)
+		return fmt.Errorf("could not marshal updated playthrough %d of story %d: %w", gid, game.GetStoryId(), err)
 	}
-	if _, err := txn.ExecContext(ctx, `UPDATE Playthroughs SET proto = ?, narration = ? WHERE id = ?`, blob, event.GetNarration(), gid); err != nil {
-		return txnError(fmt.Sprintf("could not update playthrough %d of story %d after action %s", gid, sid, aid), txn, err)
-	}
-	if err := txn.Commit(); err != nil {
-		return txnError("could not write to database", txn, err)
+	if _, err := txn.ExecContext(ctx, `UPDATE Playthroughs SET proto = ?, narration = ? WHERE id = ?`, blob, narration, gid); err != nil {
+		return fmt.Errorf("could not update playthrough %d: %w", gid, err)
 	}
 	return nil
 }

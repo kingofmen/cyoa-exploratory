@@ -140,8 +140,8 @@ func (h *Handler) CreateLocation(w http.ResponseWriter, req *http.Request) {
 	title := req.FormValue(data.CreateLocTitle)
 	content := req.FormValue(data.CreateLocContent)
 	locData := &storypb.Location{
-		Title:   &title,
-		Content: &content,
+		Title:       &title,
+		Description: &content,
 	}
 	_, err := h.client.CreateLocation(req.Context(), &spb.CreateLocationRequest{
 		Location: locData,
@@ -170,9 +170,9 @@ func (h *Handler) updateLocation(ctx context.Context, locID string, title, conte
 	if _, err = h.client.UpdateLocation(ctx, &spb.UpdateLocationRequest{
 		LocationId: proto.String(locID),
 		Location: &storypb.Location{
-			Id:      proto.String(locID),
-			Title:   proto.String(title),
-			Content: proto.String(content),
+			Id:          proto.String(locID),
+			Title:       proto.String(title),
+			Description: proto.String(content),
 		},
 	}); err != nil {
 		return fmt.Errorf("Error updating location with ID %d: %v", locID, err)

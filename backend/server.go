@@ -295,10 +295,16 @@ func (s *Server) GameState(ctx context.Context, req *spb.GameStateRequest) (*spb
 	if err != nil {
 		return nil, fmt.Errorf("could not validate action %s in game %d: %w", aid, gid, err)
 	}
-	updated := event.GetGameSnapshot()
+	gameState := event.GetGameSnapshot()
 
+	display := &storypb.GameDisplay{
+		Story: &storypb.Summary{
+			Title:       proto.String(event.GetStory().GetTitle()),
+			Description: proto.String(event.GetStory().GetDescription()),
+		},
+	}
 	if event.GetAction() != nil {
-		updated, err = story.HandleEvent(event)
+		gameState, err = story.HandleEvent(event)
 		if err != nil {
 			return nil, fmt.Errorf("could not apply action %s in game %d: %w", aid, gid, err)
 		}
@@ -308,26 +314,28 @@ func (s *Server) GameState(ctx context.Context, req *spb.GameStateRequest) (*spb
 			return nil, fmt.Errorf("could not narrate action %s in game %d: %w", aid, gid, err)
 		}
 
-		event.GameSnapshot = updated
+		event.GameSnapshot = gameState
 		if nn := event.GetNarration(); len(nn) > 0 {
 			content = strings.Join([]string{nn, content}, "\n")
 		}
-		event.Narration = proto.String(content)
-		if err := writeAction(ctx, s.db, event); err != nil {
-			return nil, fmt.Errorf("GameState error: %w", err)
+		display.Narration = proto.String(content)
+
+		txn, err := s.db.BeginTx(ctx, nil)
+		if err != nil {
+			return nil, fmt.Errorf("could not begin write transaction for action %s in playthrough %d: %w", aid, gid, err)
+		}
+		if err := writeAction(ctx, txn, gameState, content); err != nil {
+			return nil, txnError(fmt.Sprintf("error writing action %s to playthrough %d", aid, gid), txn, err)
+		}
+		if err := txn.Commit(); err != nil {
+			return nil, txnError(fmt.Sprintf("could not commit action %s to playthrough %d", aid, gid), txn, err)
 		}
 	}
 
+	display.Location = summarize(event.GetLocation())
+
 	// Copy across only fields to be displayed.
 	return &spb.GameStateResponse{
-		State: &storypb.GameEvent{
-			Location:     event.GetLocation(),
-			GameSnapshot: updated,
-			Story: &storypb.Story{
-				Title:       proto.String(event.GetStory().GetTitle()),
-				Description: proto.String(event.GetStory().GetDescription()),
-			},
-			Narration: event.Narration,
-		},
+		State: display,
 	}, nil
 }
