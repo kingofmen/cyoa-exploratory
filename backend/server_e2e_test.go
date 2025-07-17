@@ -258,28 +258,12 @@ func TestStoryE2E(t *testing.T) {
 
 	displayStory := summarize(story)
 	displayActions1 := []*storypb.Summary{
-		&storypb.Summary{
-			Id:          proto.String(charFighter.GetId()),
-			Title:       proto.String(charFighter.GetId()),
-			Description: proto.String(charFighter.GetId()),
-		},
-		&storypb.Summary{
-			Id:          proto.String(charThief.GetId()),
-			Title:       proto.String(charThief.GetId()),
-			Description: proto.String(charThief.GetId()),
-		},
+		summarize(charFighter),
+		summarize(charThief),
 	}
 	displayActions2 := []*storypb.Summary{
-		&storypb.Summary{
-			Id:          proto.String(fightOgre.GetId()),
-			Title:       proto.String(fightOgre.GetId()),
-			Description: proto.String(fightOgre.GetId()),
-		},
-		&storypb.Summary{
-			Id:          proto.String(sneakOgre.GetId()),
-			Title:       proto.String(sneakOgre.GetId()),
-			Description: proto.String(sneakOgre.GetId()),
-		},
+		summarize(fightOgre),
+		summarize(sneakOgre),
 	}
 	cases := []struct {
 		desc    string

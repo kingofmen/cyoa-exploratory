@@ -125,20 +125,30 @@ func HandleEvent(event *storypb.GameEvent) (*storypb.GameEvent, error) {
 
 // PossibleActions returns the actions of the current story location
 // that are possible given the rest of the game state.
-func PossibleActions(event *storypb.GameEvent) []string {
+func PossibleActions(event *storypb.GameEvent) []*storypb.Action {
 	state := &gameState{game: event}
-	cands := event.GetLocation().GetPossibleActions()
-	ret := make([]string, 0, len(cands))
-	for idx, cand := range cands {
-		good, err := logic.Eval(cand.GetCondition(), state)
+	pacts := event.GetLocation().GetPossibleActions()
+	actMap := make(map[string]*storypb.Action)
+	for _, act := range event.GetCandidateActions() {
+		actMap[act.GetId()] = act
+	}
+	ret := make([]*storypb.Action, 0, len(pacts))
+	for idx, pact := range pacts {
+		pid := pact.GetActionId()
+		target, exists := actMap[pid]
+		if !exists {
+			log.Printf("Candidate action %q from location %q does not exist in event", pid, event.GetLocation().GetId())
+			continue
+		}
+		good, err := logic.Eval(pact.GetCondition(), state)
 		if err != nil {
-			log.Printf("Could not evaluate predicate for possible action %d (%s) in story %q: %v", idx, cand.GetActionId(), event.GetStory().GetTitle(), err)
+			log.Printf("Could not evaluate predicate for possible action %d (%s: %s) in story %q: %v", idx, pid, target.GetTitle(), event.GetStory().GetTitle(), err)
 			continue
 		}
 		if !good {
 			continue
 		}
-		ret = append(ret, cand.GetActionId())
+		ret = append(ret, target)
 	}
 	return ret
 }

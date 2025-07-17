@@ -287,13 +287,9 @@ func makeGameDisplay(event *storypb.GameEvent) *storypb.GameDisplay {
 		Narration: proto.String(event.GetNarration()),
 	}
 
-	aids := story.PossibleActions(event)
-	for _, aid := range aids {
-		display.Actions = append(display.Actions, &storypb.Summary{
-			Id:          proto.String(aid),
-			Title:       proto.String(aid),
-			Description: proto.String(aid),
-		})
+	acts := story.PossibleActions(event)
+	for _, act := range acts {
+		display.Actions = append(display.Actions, summarize(act))
 	}
 
 	return display
@@ -310,7 +306,6 @@ func (s *Server) GameState(ctx context.Context, req *spb.GameStateRequest) (*spb
 		}
 	}
 
-	// TODO: Ensure that possible actions for location are loaded here.
 	txn, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not begin read transaction for action %s in playthrough %d: %w", aid, gid, err)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"google.golang.org/protobuf/proto"
 
@@ -37,6 +38,48 @@ func loadGame(ctx context.Context, txn *sql.Tx, gid int64) (*storypb.Playthrough
 	}
 	game.Id = proto.Int64(gid)
 	return game, text.String, nil
+}
+
+func loadActions(ctx context.Context, txn *sql.Tx, aids ...string) ([]*storypb.Action, error) {
+	if len(aids) == 0 {
+		return []*storypb.Action{}, nil
+	}
+
+	placeholders := strings.Repeat("?,", len(aids)-1) + "?"
+	query := fmt.Sprintf(`SELECT id, proto FROM Actions WHERE id IN (%s)`, placeholders)
+
+	// Convert to interface{} for variadic argument.
+	args := make([]interface{}, len(aids))
+	for idx, aid := range aids {
+		args[idx] = aid
+	}
+	rows, err := txn.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("could not query actions %v: %w", aids, err)
+	}
+	defer rows.Close()
+
+	var actions []*storypb.Action
+	for rows.Next() {
+		var id string
+		var blob []byte
+		if err := rows.Scan(&id, &blob); err != nil {
+			return nil, fmt.Errorf("could not scan action row: %w", err)
+		}
+
+		action := &storypb.Action{}
+		if err := proto.Unmarshal(blob, action); err != nil {
+			return nil, fmt.Errorf("could not unmarshal action %s: %w", id, err)
+		}
+
+		action.Id = proto.String(id)
+		actions = append(actions, action)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating action rows: %w", err)
+	}
+	return actions, nil
 }
 
 func loadAction(ctx context.Context, txn *sql.Tx, aid string) (*storypb.Action, error) {

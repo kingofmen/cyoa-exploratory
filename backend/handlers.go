@@ -391,13 +391,22 @@ func loadStoryState(ctx context.Context, txn *sql.Tx, gid int64, aid string) (*s
 		return nil, fmt.Errorf("could not find location %s for playthrough %d of story %d: %w", lid, gid, sid, err)
 	}
 
+	aids := make([]string, 0, len(loc.GetPossibleActions()))
+	for _, pact := range loc.GetPossibleActions() {
+		aids = append(aids, pact.GetActionId())
+	}
+	candActs, err := loadActions(ctx, txn, aids...)
+	if err != nil {
+		return nil, fmt.Errorf("could not load candidate actions for location %s (%s): %w", loc.GetId(), loc.GetTitle(), err)
+	}
+
 	return &storypb.GameEvent{
 		PlayerAction:     act,
 		Location:         loc,
 		Values:           game.GetValues(),
 		Story:            str,
 		Narration:        proto.String(narration),
-		CandidateActions: nil,
+		CandidateActions: candActs,
 		State:            game.GetState().Enum(),
 	}, nil
 }
