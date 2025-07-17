@@ -11,9 +11,9 @@ import (
 	storypb "github.com/kingofmen/cyoa-exploratory/story/proto"
 )
 
-// gameState implements logic.Lookup with a Playthrough as its scope.
+// gameState implements logic.Lookup with a GameEvent as its scope.
 type gameState struct {
-	game *storypb.Playthrough
+	game *storypb.GameEvent
 }
 
 func (g *gameState) GetInt(key string) (int64, error) {
@@ -59,9 +59,11 @@ func allowed(act *storypb.Action, loc *storypb.Location, state logic.Lookup) err
 }
 
 // apply sets the new state of the playthrough according to the effect.
-func apply(eff *storypb.Effect, game *storypb.Playthrough) {
+func apply(eff *storypb.Effect, game *storypb.GameEvent) {
 	if nl := eff.GetNewLocationId(); len(nl) > 0 {
-		game.LocationId = proto.String(nl)
+		game.Location = &storypb.Location{
+			Id: proto.String(nl),
+		}
 	}
 	if k, v := eff.GetTweakValue(), eff.GetTweakAmount(); len(k) > 0 && v != 0 {
 		if len(game.Values) == 0 {
@@ -74,11 +76,11 @@ func apply(eff *storypb.Effect, game *storypb.Playthrough) {
 	}
 }
 
-func HandleEvent(event *storypb.GameEvent) (*storypb.Playthrough, error) {
-	game := proto.Clone(event.GetGameSnapshot()).(*storypb.Playthrough)
-	act, loc, str := event.GetAction(), event.GetLocation(), event.GetStory()
+func HandleEvent(event *storypb.GameEvent) (*storypb.GameEvent, error) {
+	game := proto.Clone(event).(*storypb.GameEvent)
+	act, loc, str := event.GetPlayerAction(), event.GetLocation(), event.GetStory()
 	aid, lid, sid := act.GetId(), loc.GetId(), str.GetId()
-	if clid := game.GetLocationId(); lid != clid {
+	if clid := game.GetLocation().GetId(); lid != clid {
 		return nil, fmt.Errorf("cannot apply action %s (%s) to location %s (%s) when current location is %s", aid, act.GetTitle(), lid, loc.GetTitle(), clid)
 	}
 	state := &gameState{game: game}
@@ -122,4 +124,24 @@ func HandleEvent(event *storypb.GameEvent) (*storypb.Playthrough, error) {
 	}
 
 	return game, nil
+}
+
+// PossibleActions returns the actions of the current story location
+// that are possible given the rest of the game state.
+func PossibleActions(event *storypb.GameEvent) []string {
+	state := &gameState{game: event}
+	cands := event.GetLocation().GetPossibleActions()
+	ret := make([]string, 0, len(cands))
+	for idx, cand := range cands {
+		good, err := logic.Eval(cand.GetCondition(), state)
+		if err != nil {
+			log.Printf("Could not evaluate predicate for possible action %d (%s) in story %q: %v", idx, cand.GetActionId(), event.GetStory().GetTitle(), err)
+			continue
+		}
+		if !good {
+			continue
+		}
+		ret = append(ret, cand.GetActionId())
+	}
+	return ret
 }

@@ -280,6 +280,25 @@ func (s *Server) ListGames(ctx context.Context, req *spb.ListGamesRequest) (*spb
 	return resp, nil
 }
 
+func makeGameDisplay(event *storypb.GameEvent) *storypb.GameDisplay {
+	display := &storypb.GameDisplay{
+		Story:     summarize(event.GetStory()),
+		Location:  summarize(event.GetLocation()),
+		Narration: proto.String(event.GetNarration()),
+	}
+
+	aids := story.PossibleActions(event)
+	for _, aid := range aids {
+		display.Actions = append(display.Actions, &storypb.Summary{
+			Id:          proto.String(aid),
+			Title:       proto.String(aid),
+			Description: proto.String(aid),
+		})
+	}
+
+	return display
+}
+
 func (s *Server) GameState(ctx context.Context, req *spb.GameStateRequest) (*spb.GameStateResponse, error) {
 	gid, aid := req.GetGameId(), req.GetActionId()
 	if gid < 1 {
@@ -287,55 +306,57 @@ func (s *Server) GameState(ctx context.Context, req *spb.GameStateRequest) (*spb
 	}
 	if len(aid) > 0 {
 		if err := uuid.Validate(aid); err != nil {
-			return nil, fmt.Errorf("invalid action ID %q: %w", aid, err)
+			return nil, fmt.Errorf("GameState called with invalid action ID %q: %w", aid, err)
 		}
 	}
 
-	event, err := validateAction(ctx, s.db, gid, aid)
+	// TODO: Ensure that possible actions for location are loaded here.
+	txn, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, fmt.Errorf("could not validate action %s in game %d: %w", aid, gid, err)
+		return nil, fmt.Errorf("could not begin read transaction for action %s in playthrough %d: %w", aid, gid, err)
 	}
-	gameState := event.GetGameSnapshot()
-
-	display := &storypb.GameDisplay{
-		Story: &storypb.Summary{
-			Title:       proto.String(event.GetStory().GetTitle()),
-			Description: proto.String(event.GetStory().GetDescription()),
-		},
+	gstate, err := loadStoryState(ctx, txn, gid, aid)
+	if err != nil {
+		return nil, txnError(fmt.Sprintf("could not load story state for action %s in playthrough %d", aid, gid), txn, err)
 	}
-	if event.GetAction() != nil {
-		gameState, err = story.HandleEvent(event)
-		if err != nil {
-			return nil, fmt.Errorf("could not apply action %s in game %d: %w", aid, gid, err)
-		}
-
-		content, err := s.narrator.Event(ctx, event)
-		if err != nil {
-			return nil, fmt.Errorf("could not narrate action %s in game %d: %w", aid, gid, err)
-		}
-
-		event.GameSnapshot = gameState
-		if nn := event.GetNarration(); len(nn) > 0 {
-			content = strings.Join([]string{nn, content}, "\n")
-		}
-		display.Narration = proto.String(content)
-
-		txn, err := s.db.BeginTx(ctx, nil)
-		if err != nil {
-			return nil, fmt.Errorf("could not begin write transaction for action %s in playthrough %d: %w", aid, gid, err)
-		}
-		if err := writeAction(ctx, txn, gameState, content); err != nil {
-			return nil, txnError(fmt.Sprintf("error writing action %s to playthrough %d", aid, gid), txn, err)
-		}
-		if err := txn.Commit(); err != nil {
-			return nil, txnError(fmt.Sprintf("could not commit action %s to playthrough %d", aid, gid), txn, err)
-		}
+	if err := txn.Commit(); err != nil {
+		return nil, txnError(fmt.Sprintf("could not commit read for action %s in playthrough %d", aid, gid), txn, err)
 	}
 
-	display.Location = summarize(event.GetLocation())
+	if gstate.GetPlayerAction() == nil {
+		return &spb.GameStateResponse{
+			State: makeGameDisplay(gstate),
+		}, nil
+	}
 
-	// Copy across only fields to be displayed.
+	nstate, err := story.HandleEvent(gstate)
+	if err != nil {
+		return nil, fmt.Errorf("could not apply action %s in game %d: %w", aid, gid, err)
+	}
+
+	content, err := s.narrator.Event(ctx, gstate)
+	if err != nil {
+		return nil, fmt.Errorf("could not narrate action %s in game %d: %w", aid, gid, err)
+	}
+
+	if nn := gstate.GetNarration(); len(nn) > 0 {
+		content = strings.Join([]string{nn, content}, "\n")
+	}
+	gstate.Narration = proto.String(content)
+
+	txn, err = s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("could not begin write transaction for action %s in playthrough %d: %w", aid, gid, err)
+	}
+	// TODO: Update the game state with new possible actions, loading from DB if location has changed.
+	if err := writeAction(ctx, txn, gid, nstate, content); err != nil {
+		return nil, txnError(fmt.Sprintf("error writing action %s to playthrough %d", aid, gid), txn, err)
+	}
+	if err := txn.Commit(); err != nil {
+		return nil, txnError(fmt.Sprintf("could not commit action %s to playthrough %d", aid, gid), txn, err)
+	}
+
 	return &spb.GameStateResponse{
-		State: display,
+		State: makeGameDisplay(gstate),
 	}, nil
 }

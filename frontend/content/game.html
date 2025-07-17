@@ -8,7 +8,7 @@
     <h1>{{.State.Story.Title}}</h1>
     <p>{{.State.Story.Description}}.</p>
 
-    {{ if .State.Narration }}
+    {{ if len .State.Narration }}
     <h1>The Story So Far</h1>
     <p>{{.State.Narration}}</p>
     {{ end }}

@@ -64,14 +64,16 @@ message Playthrough {
   RunState state = 5;
 }
 
-// GameEvent holds a specific action, the location it occurred in,
-// the game state at that moment, and the story information.
+// GameEvent holds a playthrough's state, including an optional
+// player action, in sufficient detail for the engine to evaluate.
 message GameEvent {
-  Action action = 1;
+  Action player_action = 1;
   Location location = 2;
-  Playthrough game_snapshot = 3;
+  map<string, int64> values = 3;
   Story story = 4;
   string narration = 5;
+  repeated Action candidate_actions = 6;
+  RunState state = 7;
 }
 
 message Summary {

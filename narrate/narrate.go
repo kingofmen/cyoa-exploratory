@@ -17,7 +17,7 @@ type Narrator interface {
 type Debug struct{}
 
 func (d *Debug) Event(_ context.Context, event *storypb.GameEvent) (string, error) {
-	return event.GetAction().GetTitle(), nil
+	return event.GetPlayerAction().GetTitle(), nil
 }
 
 // Noop is a placeholder narrator which returns an empty string.

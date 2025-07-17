@@ -366,49 +366,50 @@ func listGamesImpl(ctx context.Context, db *sql.DB, req *spb.ListGamesRequest) (
 	return resp, nil
 }
 
-// validateAction loads the action, location, game, and story for a player input.
+// loadStoryState loads the player action, location, state, and story for a game.
 // It is read-only.
-func validateAction(ctx context.Context, db *sql.DB, gid int64, aid string) (*storypb.GameEvent, error) {
-	txn, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, fmt.Errorf("could not begin transaction: %w", err)
-	}
+func loadStoryState(ctx context.Context, txn *sql.Tx, gid int64, aid string) (*storypb.GameEvent, error) {
 	game, narration, err := loadGame(ctx, txn, gid)
 	if err != nil {
-		return nil, txnError(fmt.Sprintf("could not find game %d", gid), txn, err)
+		return nil, fmt.Errorf("could not find game %d: %w", gid, err)
 	}
 	sid := game.GetStoryId()
 	str, err := loadStory(ctx, txn, sid)
 	if err != nil {
-		return nil, txnError(fmt.Sprintf("could not find story %d for playthrough %d", sid, gid), txn, err)
+		return nil, fmt.Errorf("could not find story %d for playthrough %d: %w", sid, gid, err)
 	}
 	var act *storypb.Action
 	if len(aid) > 0 {
 		act, err = loadAction(ctx, txn, aid)
 		if err != nil {
-			return nil, txnError(fmt.Sprintf("could not find action %s for playthrough %d of story %d", aid, gid, sid), txn, err)
+			return nil, fmt.Errorf("could not find action %s for playthrough %d of story %d: %w", aid, gid, sid, err)
 		}
 	}
 	lid := game.GetLocationId()
 	loc, err := loadLocation(ctx, txn, lid)
 	if err != nil {
-		return nil, txnError(fmt.Sprintf("could not find location %s for playthrough %d of story %d", lid, gid, sid), txn, err)
-	}
-	if err := txn.Commit(); err != nil {
-		return nil, txnError("could not write to database", txn, err)
+		return nil, fmt.Errorf("could not find location %s for playthrough %d of story %d: %w", lid, gid, sid, err)
 	}
 
 	return &storypb.GameEvent{
-		Action:       act,
-		Location:     loc,
-		GameSnapshot: game,
-		Story:        str,
-		Narration:    proto.String(narration),
+		PlayerAction:     act,
+		Location:         loc,
+		Values:           game.GetValues(),
+		Story:            str,
+		Narration:        proto.String(narration),
+		CandidateActions: nil,
+		State:            game.GetState().Enum(),
 	}, nil
 }
 
-func writeAction(ctx context.Context, txn *sql.Tx, game *storypb.Playthrough, narration string) error {
-	gid := game.GetId()
+func writeAction(ctx context.Context, txn *sql.Tx, gid int64, gstate *storypb.GameEvent, narration string) error {
+	game := &storypb.Playthrough{
+		Id:         proto.Int64(gid),
+		StoryId:    proto.Int64(gstate.GetStory().GetId()),
+		LocationId: proto.String(gstate.GetLocation().GetId()),
+		Values:     gstate.GetValues(),
+		State:      gstate.GetState().Enum(),
+	}
 	blob, err := proto.Marshal(game)
 	if err != nil {
 		return fmt.Errorf("could not marshal updated playthrough %d of story %d: %w", gid, game.GetStoryId(), err)

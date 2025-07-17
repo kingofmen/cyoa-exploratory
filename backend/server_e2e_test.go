@@ -257,6 +257,30 @@ func TestStoryE2E(t *testing.T) {
 	}
 
 	displayStory := summarize(story)
+	displayActions1 := []*storypb.Summary{
+		&storypb.Summary{
+			Id:          proto.String(charFighter.GetId()),
+			Title:       proto.String(charFighter.GetId()),
+			Description: proto.String(charFighter.GetId()),
+		},
+		&storypb.Summary{
+			Id:          proto.String(charThief.GetId()),
+			Title:       proto.String(charThief.GetId()),
+			Description: proto.String(charThief.GetId()),
+		},
+	}
+	displayActions2 := []*storypb.Summary{
+		&storypb.Summary{
+			Id:          proto.String(fightOgre.GetId()),
+			Title:       proto.String(fightOgre.GetId()),
+			Description: proto.String(fightOgre.GetId()),
+		},
+		&storypb.Summary{
+			Id:          proto.String(sneakOgre.GetId()),
+			Title:       proto.String(sneakOgre.GetId()),
+			Description: proto.String(sneakOgre.GetId()),
+		},
+	}
 	cases := []struct {
 		desc    string
 		actions []string
@@ -270,11 +294,13 @@ func TestStoryE2E(t *testing.T) {
 					Location:  summarize(chooseChar),
 					Story:     displayStory,
 					Narration: proto.String("Fighter"),
+					Actions:   displayActions1,
 				},
 				&storypb.GameDisplay{
 					Location:  summarize(ogreFight),
 					Story:     displayStory,
 					Narration: proto.String("Fighter\nAttack!"),
+					Actions:   displayActions2,
 				},
 			},
 		},
@@ -286,11 +312,13 @@ func TestStoryE2E(t *testing.T) {
 					Location:  summarize(chooseChar),
 					Story:     displayStory,
 					Narration: proto.String("Rogue"),
+					Actions:   displayActions1,
 				},
 				&storypb.GameDisplay{
 					Location:  summarize(ogreFight),
 					Story:     displayStory,
 					Narration: proto.String("Rogue\nAttack!"),
+					Actions:   displayActions2,
 				},
 			},
 		},
@@ -302,11 +330,13 @@ func TestStoryE2E(t *testing.T) {
 					Location:  summarize(chooseChar),
 					Story:     displayStory,
 					Narration: proto.String("Fighter"),
+					Actions:   displayActions1,
 				},
 				&storypb.GameDisplay{
 					Location:  summarize(ogreFight),
 					Story:     displayStory,
 					Narration: proto.String("Fighter\nSlow and sneaky wins the race..."),
+					Actions:   displayActions2,
 				},
 			},
 		},
@@ -318,11 +348,13 @@ func TestStoryE2E(t *testing.T) {
 					Location:  summarize(chooseChar),
 					Story:     displayStory,
 					Narration: proto.String("Rogue"),
+					Actions:   displayActions1,
 				},
 				&storypb.GameDisplay{
 					Location:  summarize(ogreFight),
 					Story:     displayStory,
 					Narration: proto.String("Rogue\nSlow and sneaky wins the race..."),
+					Actions:   displayActions2,
 				},
 			},
 		},
