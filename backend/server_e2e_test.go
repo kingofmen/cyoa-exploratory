@@ -360,7 +360,6 @@ func TestStoryE2E(t *testing.T) {
 		},
 	}
 
-	ignore := protocmp.IgnoreFields(&storypb.Playthrough{}, "id", "story_id")
 	for cid, cc := range cases {
 		t.Run(cc.desc, func(t *testing.T) {
 			gresp, err := srv.CreateGame(ctx, &spb.CreateGameRequest{
@@ -383,7 +382,7 @@ func TestStoryE2E(t *testing.T) {
 					continue
 				}
 				got, want := resp.GetState(), cc.expect[idx]
-				if diff := cmp.Diff(got, want, protocmp.Transform(), ignore); diff != "" {
+				if diff := cmp.Diff(got, want, protocmp.Transform()); diff != "" {
 					t.Errorf("%s: GameState(%d) => %s, want %s, diff %s", cc.desc, idx, prototext.Format(got), prototext.Format(want), diff)
 				}
 			}

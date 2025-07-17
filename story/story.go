@@ -80,9 +80,6 @@ func HandleEvent(event *storypb.GameEvent) (*storypb.GameEvent, error) {
 	game := proto.Clone(event).(*storypb.GameEvent)
 	act, loc, str := event.GetPlayerAction(), event.GetLocation(), event.GetStory()
 	aid, lid, sid := act.GetId(), loc.GetId(), str.GetId()
-	if clid := game.GetLocation().GetId(); lid != clid {
-		return nil, fmt.Errorf("cannot apply action %s (%s) to location %s (%s) when current location is %s", aid, act.GetTitle(), lid, loc.GetTitle(), clid)
-	}
 	state := &gameState{game: game}
 	if err := allowed(act, loc, state); err != nil {
 		return nil, fmt.Errorf("action %s (%s) not available in location %s (%s): %w", aid, act.GetTitle(), lid, loc.GetTitle(), err)
