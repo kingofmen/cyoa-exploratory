@@ -272,73 +272,93 @@ func TestStoryE2E(t *testing.T) {
 	}{
 		{
 			desc:    "Fighter, attack",
-			actions: []string{charFighter.GetId(), fightOgre.GetId()},
+			actions: []string{"", charFighter.GetId(), fightOgre.GetId()},
 			expect: []*storypb.GameDisplay{
 				&storypb.GameDisplay{
 					Location:  summarize(chooseChar),
 					Story:     displayStory,
-					Narration: proto.String("Fighter"),
+					Narration: proto.String(""),
 					Actions:   displayActions1,
+				},
+				&storypb.GameDisplay{
+					Location:  summarize(ogreFight),
+					Story:     displayStory,
+					Narration: proto.String("Fighter"),
+					Actions:   displayActions2,
 				},
 				&storypb.GameDisplay{
 					Location:  summarize(ogreFight),
 					Story:     displayStory,
 					Narration: proto.String("Fighter\nAttack!"),
-					Actions:   displayActions2,
 				},
 			},
 		},
 		{
 			desc:    "Rogue, attack",
-			actions: []string{charThief.GetId(), fightOgre.GetId()},
+			actions: []string{"", charThief.GetId(), fightOgre.GetId()},
 			expect: []*storypb.GameDisplay{
 				&storypb.GameDisplay{
 					Location:  summarize(chooseChar),
 					Story:     displayStory,
-					Narration: proto.String("Rogue"),
+					Narration: proto.String(""),
 					Actions:   displayActions1,
+				},
+				&storypb.GameDisplay{
+					Location:  summarize(ogreFight),
+					Story:     displayStory,
+					Narration: proto.String("Rogue"),
+					Actions:   displayActions2,
 				},
 				&storypb.GameDisplay{
 					Location:  summarize(ogreFight),
 					Story:     displayStory,
 					Narration: proto.String("Rogue\nAttack!"),
-					Actions:   displayActions2,
 				},
 			},
 		},
 		{
 			desc:    "Fighter, sneak",
-			actions: []string{charFighter.GetId(), sneakOgre.GetId()},
+			actions: []string{"", charFighter.GetId(), sneakOgre.GetId()},
 			expect: []*storypb.GameDisplay{
 				&storypb.GameDisplay{
 					Location:  summarize(chooseChar),
 					Story:     displayStory,
-					Narration: proto.String("Fighter"),
+					Narration: proto.String(""),
 					Actions:   displayActions1,
+				},
+				&storypb.GameDisplay{
+					Location:  summarize(ogreFight),
+					Story:     displayStory,
+					Narration: proto.String("Fighter"),
+					Actions:   displayActions2,
 				},
 				&storypb.GameDisplay{
 					Location:  summarize(ogreFight),
 					Story:     displayStory,
 					Narration: proto.String("Fighter\nSlow and sneaky wins the race..."),
-					Actions:   displayActions2,
 				},
 			},
 		},
 		{
 			desc:    "Rogue, sneak",
-			actions: []string{charThief.GetId(), sneakOgre.GetId()},
+			actions: []string{"", charThief.GetId(), sneakOgre.GetId()},
 			expect: []*storypb.GameDisplay{
 				&storypb.GameDisplay{
 					Location:  summarize(chooseChar),
 					Story:     displayStory,
-					Narration: proto.String("Rogue"),
+					Narration: proto.String(""),
 					Actions:   displayActions1,
 				},
 				&storypb.GameDisplay{
 					Location:  summarize(ogreFight),
 					Story:     displayStory,
-					Narration: proto.String("Rogue\nSlow and sneaky wins the race..."),
+					Narration: proto.String("Rogue"),
 					Actions:   displayActions2,
+				},
+				&storypb.GameDisplay{
+					Location:  summarize(ogreFight),
+					Story:     displayStory,
+					Narration: proto.String("Rogue\nSlow and sneaky wins the race..."),
 				},
 			},
 		},

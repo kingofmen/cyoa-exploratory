@@ -366,6 +366,14 @@ func listGamesImpl(ctx context.Context, db *sql.DB, req *spb.ListGamesRequest) (
 	return resp, nil
 }
 
+func loadPossibleActions(ctx context.Context, txn *sql.Tx, loc *storypb.Location) ([]*storypb.Action, error) {
+	aids := make([]string, 0, len(loc.GetPossibleActions()))
+	for _, pact := range loc.GetPossibleActions() {
+		aids = append(aids, pact.GetActionId())
+	}
+	return loadActions(ctx, txn, aids...)
+}
+
 // loadStoryState loads the player action, location, state, and story for a game.
 // It is read-only.
 func loadStoryState(ctx context.Context, txn *sql.Tx, gid int64, aid string) (*storypb.GameEvent, error) {
@@ -391,11 +399,7 @@ func loadStoryState(ctx context.Context, txn *sql.Tx, gid int64, aid string) (*s
 		return nil, fmt.Errorf("could not find location %s for playthrough %d of story %d: %w", lid, gid, sid, err)
 	}
 
-	aids := make([]string, 0, len(loc.GetPossibleActions()))
-	for _, pact := range loc.GetPossibleActions() {
-		aids = append(aids, pact.GetActionId())
-	}
-	candActs, err := loadActions(ctx, txn, aids...)
+	candActs, err := loadPossibleActions(ctx, txn, loc)
 	if err != nil {
 		return nil, fmt.Errorf("could not load candidate actions for location %s (%s): %w", loc.GetId(), loc.GetTitle(), err)
 	}

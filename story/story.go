@@ -126,6 +126,9 @@ func HandleEvent(event *storypb.GameEvent) (*storypb.GameEvent, error) {
 // PossibleActions returns the actions of the current story location
 // that are possible given the rest of the game state.
 func PossibleActions(event *storypb.GameEvent) []*storypb.Action {
+	if event.GetState() == storypb.RunState_RS_COMPLETE {
+		return nil
+	}
 	state := &gameState{game: event}
 	pacts := event.GetLocation().GetPossibleActions()
 	actMap := make(map[string]*storypb.Action)

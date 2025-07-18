@@ -337,13 +337,25 @@ func (s *Server) GameState(ctx context.Context, req *spb.GameStateRequest) (*spb
 	if nn := gstate.GetNarration(); len(nn) > 0 {
 		content = strings.Join([]string{nn, content}, "\n")
 	}
-	gstate.Narration = proto.String(content)
+	nstate.Narration = proto.String(content)
 
 	txn, err = s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not begin write transaction for action %s in playthrough %d: %w", aid, gid, err)
 	}
-	// TODO: Update the game state with new possible actions, loading from DB if location has changed.
+	if nlid := nstate.GetLocation().GetId(); nlid != gstate.GetLocation().GetId() {
+		// New location, load from DB.
+		nloc, err := loadLocation(ctx, txn, nlid)
+		if err != nil {
+			return nil, txnError(fmt.Sprintf("could not load new location %s after action %s", nlid, aid), txn, err)
+		}
+		nstate.Location = nloc
+		acts, err := loadPossibleActions(ctx, txn, nloc)
+		if err != nil {
+			return nil, txnError(fmt.Sprintf("could not load new candidate actions for location %s after action %s", nlid, aid), txn, err)
+		}
+		nstate.CandidateActions = acts
+	}
 	if err := writeAction(ctx, txn, gid, nstate, content); err != nil {
 		return nil, txnError(fmt.Sprintf("error writing action %s to playthrough %d", aid, gid), txn, err)
 	}
@@ -352,6 +364,6 @@ func (s *Server) GameState(ctx context.Context, req *spb.GameStateRequest) (*spb
 	}
 
 	return &spb.GameStateResponse{
-		State: makeGameDisplay(gstate),
+		State: makeGameDisplay(nstate),
 	}, nil
 }
