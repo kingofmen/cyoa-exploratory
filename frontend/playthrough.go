@@ -45,6 +45,10 @@ func (h *Handler) PlayGameHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	ctx := req.Context()
+	gsr := &spb.GameStateRequest{
+		GameId: proto.Int64(gid),
+	}
+	astr := ""
 	if req.Method == http.MethodPost {
 		if err := req.ParseForm(); err != nil {
 			http.Error(w, fmt.Sprintf("bad form: %v", err), http.StatusBadRequest)
@@ -55,23 +59,13 @@ func (h *Handler) PlayGameHandler(w http.ResponseWriter, req *http.Request) {
 			http.Error(w, "choose an action", http.StatusBadRequest)
 			return
 		}
-		_, err := h.client.GameState(ctx, &spb.GameStateRequest{
-			GameId:   proto.Int64(gid),
-			ActionId: proto.String(aid),
-		})
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Cannot advance playthrough %d with action %q: %v", gid, aid, err), http.StatusInternalServerError)
-			return
-		}
-		http.Redirect(w, req, fmt.Sprintf("%s?game_id=%d", PlayGameURL, gid), http.StatusSeeOther)
-		return
+		gsr.ActionId = proto.String(aid)
+		astr = fmt.Sprintf(" with action %q", aid)
 	}
 
-	resp, err := h.client.GameState(ctx, &spb.GameStateRequest{
-		GameId: proto.Int64(gid),
-	})
+	resp, err := h.client.GameState(ctx, gsr)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Cannot load playthrough %d: %v", gid, err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Cannot load playthrough %d%s: %v", gid, astr, err), http.StatusInternalServerError)
 		return
 	}
 
