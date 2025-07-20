@@ -6,7 +6,7 @@
 </head>
 <body>
     <h1>{{.State.Story.Title}}</h1>
-    <p>{{.State.Story.Description}}.</p>
+    <p>{{.State.Story.Description}}</p>
 
     {{ if len .State.Narration }}
     <h1>The Story So Far</h1>
@@ -15,16 +15,15 @@
 
     <h1>What Next?</h1>
     <p>{{.State.Location.Description}}</p>
-    <p>
+    <form action="/play?game_id={{.GameId}}" method="post">
+      <input type="hidden" id="game_id" name="game_id" value="{{.GameId}}">
       {{ range $act  := .State.Actions }}
-      <details>
-        <summary>
-	  {{ $act.Title }}
-	</summary>
-	{{ $act.Description }}
-      </details>
+      <input type="radio" id="{{$act.Id}}" name="action_id" value="{{$act.Id}}">
+      <label for="{{$act.Id}}">{{$act.Title}}</label><br>
+      <blockquote>{{$act.Description}}</blockquote><br>
       {{ end }}
-    </p>
+      <input type="submit" value="Do it!">
+    </form>
 
 </body>
 </html>

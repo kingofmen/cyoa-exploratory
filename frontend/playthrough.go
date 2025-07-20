@@ -13,7 +13,8 @@ import (
 
 // playData holds data for the playthrough template.
 type playData struct {
-	State *storypb.GameDisplay
+	GameId int64
+	State  *storypb.GameDisplay
 }
 
 // CreatePlaythroughHandler creates a new playthrough for the requested story.
@@ -44,6 +45,28 @@ func (h *Handler) PlayGameHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	ctx := req.Context()
+	if req.Method == http.MethodPost {
+		if err := req.ParseForm(); err != nil {
+			http.Error(w, fmt.Sprintf("bad form: %v", err), http.StatusBadRequest)
+			return
+		}
+		aid := req.FormValue("action_id")
+		if len(aid) < 1 {
+			http.Error(w, "choose an action", http.StatusBadRequest)
+			return
+		}
+		_, err := h.client.GameState(ctx, &spb.GameStateRequest{
+			GameId:   proto.Int64(gid),
+			ActionId: proto.String(aid),
+		})
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Cannot advance playthrough %d with action %q: %v", gid, aid, err), http.StatusInternalServerError)
+			return
+		}
+		http.Redirect(w, req, fmt.Sprintf("%s?game_id=%d", PlayGameURL, gid), http.StatusSeeOther)
+		return
+	}
+
 	resp, err := h.client.GameState(ctx, &spb.GameStateRequest{
 		GameId: proto.Int64(gid),
 	})
@@ -53,7 +76,8 @@ func (h *Handler) PlayGameHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	data := &playData{
-		State: resp.GetState(),
+		GameId: gid,
+		State:  resp.GetState(),
 	}
 	if err := h.playTmpl.Execute(w, data); err != nil {
 		log.Printf("Play template execution error: %v", err)

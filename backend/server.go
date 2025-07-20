@@ -289,7 +289,9 @@ func makeGameDisplay(event *storypb.GameEvent) *storypb.GameDisplay {
 
 	acts := story.PossibleActions(event)
 	for _, act := range acts {
-		display.Actions = append(display.Actions, summarize(act))
+		summary := summarize(act)
+		summary.Id = act.Id
+		display.Actions = append(display.Actions, summary)
 	}
 
 	return display
