@@ -10,7 +10,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
-	"github.com/kingofmen/cyoa-exploratory/narrate"
 	"github.com/pressly/goose/v3"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/mysql"
@@ -72,7 +71,7 @@ func TestMain(m *testing.M) {
 
 func TestStoryE2E(t *testing.T) {
 	ctx := context.Background()
-	srv := New(db).WithNarrator(narrate.NewDebug())
+	srv := New(db)
 	uuid1 := uuid.New().String()
 	uuid2 := uuid.New().String()
 	uuid3 := uuid.New().String()

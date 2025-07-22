@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"maps"
 	"slices"
 	"strings"
@@ -18,23 +19,34 @@ import (
 	storypb "github.com/kingofmen/cyoa-exploratory/story/proto"
 )
 
+const (
+	debugTellerKey = "debug"
+)
+
 type Server struct {
-	db       *sql.DB
-	narrator narrate.Narrator
+	db      *sql.DB
+	tellers map[string]*narrateInfo
+}
+
+type narrateInfo struct {
+	narrate.Narrator
 }
 
 func New(db *sql.DB) *Server {
 	return &Server{
-		db:       db,
-		narrator: narrate.NewNoop(),
+		db: db,
+		tellers: map[string]*narrateInfo{
+			"noop":         &narrateInfo{Narrator: narrate.NewNoop()},
+			debugTellerKey: &narrateInfo{Narrator: narrate.NewDebug()},
+		},
 	}
 }
 
-func (s *Server) WithNarrator(n narrate.Narrator) *Server {
+func (s *Server) WithNarrator(key string, n narrate.Narrator) *Server {
 	if s == nil {
 		s = New(nil)
 	}
-	s.narrator = n
+	s.tellers[key] = &narrateInfo{Narrator: n}
 	return s
 }
 
@@ -348,7 +360,13 @@ func (s *Server) GameState(ctx context.Context, req *spb.GameStateRequest) (*spb
 		nstate.CandidateActions = acts
 	}
 
-	content, err := s.narrator.Event(ctx, gstate, nstate)
+	narrateKey := debugTellerKey
+	tell, ok := s.tellers[narrateKey]
+	if !ok {
+		log.Printf("No teller %q found, falling back on default %q", narrateKey, debugTellerKey)
+		tell = s.tellers[debugTellerKey]
+	}
+	content, err := tell.Event(ctx, gstate, nstate)
 	if err != nil {
 		return nil, fmt.Errorf("could not narrate action %s in game %d: %w", aid, gid, err)
 	}
