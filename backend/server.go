@@ -297,6 +297,7 @@ func makeGameDisplay(event *storypb.GameEvent) *storypb.GameDisplay {
 		Story:     summarize(event.GetStory()),
 		Location:  summarize(event.GetLocation()),
 		Narration: proto.String(event.GetNarration()),
+		RunState:  event.GetState().Enum(),
 	}
 
 	acts := story.PossibleActions(event)

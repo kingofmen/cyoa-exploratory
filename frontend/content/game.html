@@ -13,6 +13,7 @@
     <p>{{.State.Narration}}</p>
     {{ end }}
 
+    {{ if not .Ended }}
     <h1>What Next?</h1>
     <p>{{.State.Location.Description}}</p>
     <form action="/play?game_id={{.GameId}}" method="post">
@@ -24,6 +25,9 @@
       {{ end }}
       <input type="submit" value="Do it!">
     </form>
+    {{ else }}
+    <h1> The End </h1>
+    {{ end }}
 
 </body>
 </html>

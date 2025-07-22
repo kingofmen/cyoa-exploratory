@@ -89,4 +89,5 @@ message GameDisplay {
   Summary location = 2;
   repeated Summary actions = 3;
   string narration = 4;
+  RunState run_state = 5;
 }

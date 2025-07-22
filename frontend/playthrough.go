@@ -15,6 +15,7 @@ import (
 type playData struct {
 	GameId int64
 	State  *storypb.GameDisplay
+	Ended  bool
 }
 
 // CreatePlaythroughHandler creates a new playthrough for the requested story.
@@ -72,6 +73,7 @@ func (h *Handler) PlayGameHandler(w http.ResponseWriter, req *http.Request) {
 	data := &playData{
 		GameId: gid,
 		State:  resp.GetState(),
+		Ended:  resp.GetState().GetRunState() == storypb.RunState_RS_COMPLETE,
 	}
 	if err := h.playTmpl.Execute(w, data); err != nil {
 		log.Printf("Play template execution error: %v", err)
