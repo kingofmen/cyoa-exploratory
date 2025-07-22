@@ -9,21 +9,21 @@ import (
 )
 
 type Narrator interface {
-	Event(context.Context, *storypb.GameEvent) (string, error)
+	Event(context.Context, *storypb.GameEvent, *storypb.GameEvent) (string, error)
 }
 
 // Debug is a narrator suitable for tests, which merely
 // echoes back the title of the provided action.
 type Debug struct{}
 
-func (d *Debug) Event(_ context.Context, event *storypb.GameEvent) (string, error) {
-	return event.GetPlayerAction().GetTitle(), nil
+func (d *Debug) Event(_ context.Context, ostate, nstate *storypb.GameEvent) (string, error) {
+	return ostate.GetPlayerAction().GetTitle(), nil
 }
 
 // Noop is a placeholder narrator which returns an empty string.
 type Noop struct{}
 
-func (d *Noop) Event(_ context.Context, event *storypb.GameEvent) (string, error) {
+func (d *Noop) Event(_ context.Context, o, n *storypb.GameEvent) (string, error) {
 	return "", nil
 }
 
