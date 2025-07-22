@@ -18,10 +18,22 @@ type summarizable interface {
 	GetDescription() string
 }
 
+type identifiable interface {
+	summarizable
+	GetId() string
+}
+
 // summarize creates a storypb.Summary object.
 func summarize(s summarizable) *storypb.Summary {
 	return &storypb.Summary{
 		Title:       proto.String(s.GetTitle()),
 		Description: proto.String(s.GetDescription()),
 	}
+}
+
+// identify creates a storypb.Summary object
+func identify(s identifiable) *storypb.Summary {
+	ret := summarize(s)
+	ret.Id = proto.String(s.GetId())
+	return ret
 }

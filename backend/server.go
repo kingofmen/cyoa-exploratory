@@ -289,8 +289,7 @@ func makeGameDisplay(event *storypb.GameEvent) *storypb.GameDisplay {
 
 	acts := story.PossibleActions(event)
 	for _, act := range acts {
-		summary := summarize(act)
-		summary.Id = act.Id
+		summary := identify(act)
 		display.Actions = append(display.Actions, summary)
 	}
 
@@ -331,16 +330,6 @@ func (s *Server) GameState(ctx context.Context, req *spb.GameStateRequest) (*spb
 		return nil, fmt.Errorf("could not apply action %s in game %d: %w", aid, gid, err)
 	}
 
-	content, err := s.narrator.Event(ctx, gstate)
-	if err != nil {
-		return nil, fmt.Errorf("could not narrate action %s in game %d: %w", aid, gid, err)
-	}
-
-	if nn := gstate.GetNarration(); len(nn) > 0 {
-		content = strings.Join([]string{nn, content}, "\n")
-	}
-	nstate.Narration = proto.String(content)
-
 	txn, err = s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not begin write transaction for action %s in playthrough %d: %w", aid, gid, err)
@@ -358,6 +347,17 @@ func (s *Server) GameState(ctx context.Context, req *spb.GameStateRequest) (*spb
 		}
 		nstate.CandidateActions = acts
 	}
+
+	content, err := s.narrator.Event(ctx, gstate, nstate)
+	if err != nil {
+		return nil, fmt.Errorf("could not narrate action %s in game %d: %w", aid, gid, err)
+	}
+
+	if nn := gstate.GetNarration(); len(nn) > 0 {
+		content = strings.Join([]string{nn, content}, "\n")
+	}
+	nstate.Narration = proto.String(content)
+
 	if err := writeAction(ctx, txn, gid, nstate, content); err != nil {
 		return nil, txnError(fmt.Sprintf("error writing action %s to playthrough %d", aid, gid), txn, err)
 	}

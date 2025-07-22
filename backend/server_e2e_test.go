@@ -258,12 +258,12 @@ func TestStoryE2E(t *testing.T) {
 
 	displayStory := summarize(story)
 	displayActions1 := []*storypb.Summary{
-		summarize(charFighter),
-		summarize(charThief),
+		identify(charFighter),
+		identify(charThief),
 	}
 	displayActions2 := []*storypb.Summary{
-		summarize(fightOgre),
-		summarize(sneakOgre),
+		identify(fightOgre),
+		identify(sneakOgre),
 	}
 	cases := []struct {
 		desc    string
