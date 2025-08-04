@@ -17,6 +17,7 @@ import (
 	"github.com/kingofmen/cyoa-exploratory/backend"
 	"github.com/kingofmen/cyoa-exploratory/db"
 	"github.com/kingofmen/cyoa-exploratory/frontend"
+	"github.com/kingofmen/cyoa-exploratory/narrate"
 	"github.com/soheilhy/cmux"
 	"google.golang.org/grpc"
 
@@ -167,20 +168,17 @@ func main() {
 	instance := os.Getenv("CYOA_DB_INSTANCE")
 	dbname := os.Getenv("CYOA_DB_NAME")
 
-	// For local testing.
+	// For local testing, do not expose in prod!
 	passwd := os.Getenv("CYOA_DB_PASSWD")
 	dbport := os.Getenv("CYOA_DB_PORT")
-
-	fullEnv := os.Environ()
-	log.Println("Environment:")
-	for _, e := range fullEnv {
-		log.Println(e)
-	}
+	grokApiKey := os.Getenv("CYOA_GROK_SECRET")
 
 	dbcfg, err := initialize.FromEnv(user, passwd, network, instance, dbport, dbname)
 	if err != nil {
 		log.Fatalf("Could not initialize DB configuration: %v", err)
 	}
+
+	// TODO: Fetch AI API keys from SecretManager here.
 
 	ctx := context.Background()
 	dbPool, cleanup, err := initialize.ConnectionPool(ctx, dbcfg)
@@ -214,8 +212,12 @@ func main() {
 	httpL := m.Match(cmux.HTTP1Fast())
 	log.Println("Matcher created for HTTP/1.1")
 
+	// Create Grok narrator.
+	grok := narrate.NewGrokker(grokApiKey)
+
 	// --- gRPC Server Setup ---
-	beRoot := handlers.New(dbPool)
+	beRoot := handlers.New(dbPool).WithNarrator("grok", grok)
+
 	// TODO: Set up as actual gRPC server with muxer instead of this fakery.
 	fcli := &FakeClient{
 		root: beRoot,

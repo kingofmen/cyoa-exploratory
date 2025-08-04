@@ -24,8 +24,9 @@ const (
 )
 
 type Server struct {
-	db      *sql.DB
-	tellers map[string]*narrateInfo
+	db        *sql.DB
+	tellers   map[string]*narrateInfo
+	tellerKey string
 }
 
 type narrateInfo struct {
@@ -39,6 +40,7 @@ func New(db *sql.DB) *Server {
 			"noop":         &narrateInfo{Narrator: narrate.NewNoop()},
 			debugTellerKey: &narrateInfo{Narrator: narrate.NewDebug()},
 		},
+		tellerKey: debugTellerKey,
 	}
 }
 
@@ -47,6 +49,7 @@ func (s *Server) WithNarrator(key string, n narrate.Narrator) *Server {
 		s = New(nil)
 	}
 	s.tellers[key] = &narrateInfo{Narrator: n}
+	s.tellerKey = key
 	return s
 }
 
@@ -361,10 +364,9 @@ func (s *Server) GameState(ctx context.Context, req *spb.GameStateRequest) (*spb
 		nstate.CandidateActions = acts
 	}
 
-	narrateKey := debugTellerKey
-	tell, ok := s.tellers[narrateKey]
+	tell, ok := s.tellers[s.tellerKey]
 	if !ok {
-		log.Printf("No teller %q found, falling back on default %q", narrateKey, debugTellerKey)
+		log.Printf("No teller %q found, falling back on default %q", s.tellerKey, debugTellerKey)
 		tell = s.tellers[debugTellerKey]
 	}
 	content, err := tell.Event(ctx, gstate, nstate)
