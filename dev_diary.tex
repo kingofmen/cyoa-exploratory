@@ -108,5 +108,45 @@
   correctly, including loading new possible actions if the player
   input changes the location. With some minor frontend tweaks it
   should now be possible to run a test game without AI narration.
+\item[August 17th] And we have a narration loop with AI! Currently the
+  prompt is terrible even for the hello-world escape-the-ogre story,
+  but it's proof of principle for the technology. For the record, the
+  very first AI-generated narration:
+\verbatim{
+With a resolute heart, you choose to embody the spirit of a mighty
+warrior, a fighter whose strength and courage are renowned across the
+lands. Your muscles tense with anticipation as you grip the hilt of
+your trusty sword, ready to face any challenge that lies ahead. As you
+step into your role, the world around you shifts, and the air grows
+thick with the stench of damp earth and danger.
+
+Before you looms a towering ogre, its grotesque form blocking the
+path forward. Its eyes gleam with malice, and a low growl rumbles from
+its throat as it hefts a massive club. You find yourself at the edge
+of a murky swamp, the ground squelching beneath your boots, with
+twisted trees casting eerie shadows around you. Your mission is clear:
+you must get past this monstrous creature to continue your
+journey. The ogre's gaze locks onto you, and it takes a menacing step
+forward, daring you to make your move.
+
+You decide to sneak past the ogre, moving with slow, deliberate steps
+to avoid drawing its attention. Your heart pounds as you inch along
+the shadowed edge of the clearing, barely breathing as the ogre grunts
+and shifts its massive bulk. Every rustle of leaves underfoot feels
+like a thunderclap, but somehow, the ogre remains oblivious,
+distracted by a bone it's gnawing on. After what feels like an
+eternity, you manage to slip by unnoticed, though you're still in the
+ogre's territory. You must get past the ogre completely to be safe,
+and the danger is far from over.
+\end{verbatim}
+This is dreadful! I chose the suboptimal path of sneaking past the
+ogre while playing a fighter, but although the game engine realized I
+died as a result, my dev stuff did not get that information into the
+prompt and so the poor AI thinks the game continues. That's totally on
+me, not the AI, but it also doesn't matter, this is throwaway dev
+content that's meant only as a tech proof-of-principle. Also I do need
+to figure out how to display the actual text in the webpage, and not
+all the metadata like tokens consumed. But all that is just part of
+the ordinary development work, the tech-as-such is now in place.
 \end{itemize}
 
