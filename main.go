@@ -212,11 +212,10 @@ func main() {
 	httpL := m.Match(cmux.HTTP1Fast())
 	log.Println("Matcher created for HTTP/1.1")
 
-	// Create Grok narrator.
-	grok := narrate.NewGrokker(grokApiKey)
-
 	// --- gRPC Server Setup ---
-	beRoot := handlers.New(dbPool).WithNarrator("grok", grok)
+	beRoot := handlers.New(dbPool).
+		WithNarrator("grok", narrate.NewGrokker(grokApiKey)).
+		WithNarrator("debug_grok", narrate.DebugGrokker())
 
 	// TODO: Set up as actual gRPC server with muxer instead of this fakery.
 	fcli := &FakeClient{

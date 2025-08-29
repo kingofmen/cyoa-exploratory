@@ -74,6 +74,7 @@ message GameEvent {
   string narration = 5;
   repeated Action candidate_actions = 6;
   RunState state = 7;
+  repeated string effects = 8;
 }
 
 message Summary {

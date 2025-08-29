@@ -59,28 +59,29 @@ func allowed(act *storypb.Action, loc *storypb.Location, state logic.Lookup) err
 }
 
 // apply sets the new state of the playthrough according to the effect.
-func apply(eff *storypb.Effect, game *storypb.GameEvent) {
+func apply(eff *storypb.Effect, nState *storypb.GameEvent) {
 	if nl := eff.GetNewLocationId(); len(nl) > 0 {
-		game.Location = &storypb.Location{
+		nState.Location = &storypb.Location{
 			Id: proto.String(nl),
 		}
 	}
 	if k, v := eff.GetTweakValue(), eff.GetTweakAmount(); len(k) > 0 && v != 0 {
-		if len(game.Values) == 0 {
-			game.Values = make(map[string]int64)
+		if len(nState.Values) == 0 {
+			nState.Values = make(map[string]int64)
 		}
-		game.Values[k] += v
+		nState.Values[k] += v
 	}
 	if ns := eff.GetNewState(); ns != storypb.RunState_RS_UNKNOWN {
-		game.State = ns.Enum()
+		nState.State = ns.Enum()
 	}
+	nState.Effects = append(nState.Effects, eff.GetDescription())
 }
 
 func HandleEvent(event *storypb.GameEvent) (*storypb.GameEvent, error) {
-	game := proto.Clone(event).(*storypb.GameEvent)
+	nState := proto.Clone(event).(*storypb.GameEvent)
 	act, loc, str := event.GetPlayerAction(), event.GetLocation(), event.GetStory()
 	aid, lid, sid := act.GetId(), loc.GetId(), str.GetId()
-	state := &gameState{game: game}
+	state := &gameState{game: nState}
 	if err := allowed(act, loc, state); err != nil {
 		return nil, fmt.Errorf("action %s (%s) not available in location %s (%s): %w", aid, act.GetTitle(), lid, loc.GetTitle(), err)
 	}
@@ -95,7 +96,7 @@ func HandleEvent(event *storypb.GameEvent) (*storypb.GameEvent, error) {
 			continue
 		}
 		for _, effect := range tap.GetEffects() {
-			apply(effect, game)
+			apply(effect, nState)
 		}
 		if tap.GetIsFinal() {
 			break
@@ -113,14 +114,14 @@ func HandleEvent(event *storypb.GameEvent) (*storypb.GameEvent, error) {
 			continue
 		}
 		for _, effect := range tap.GetEffects() {
-			apply(effect, game)
+			apply(effect, nState)
 		}
 		if tap.GetIsFinal() {
 			break
 		}
 	}
 
-	return game, nil
+	return nState, nil
 }
 
 // PossibleActions returns the actions of the current story location
