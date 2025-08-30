@@ -1,10 +1,13 @@
 package server
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 
+	"github.com/yuin/goldmark"
 	"google.golang.org/protobuf/proto"
 
 	spb "github.com/kingofmen/cyoa-exploratory/backend/proto"
@@ -13,9 +16,10 @@ import (
 
 // playData holds data for the playthrough template.
 type playData struct {
-	GameId int64
-	State  *storypb.GameDisplay
-	Ended  bool
+	GameId    int64
+	State     *storypb.GameDisplay
+	Narration template.HTML
+	Ended     bool
 }
 
 // CreatePlaythroughHandler creates a new playthrough for the requested story.
@@ -70,10 +74,18 @@ func (h *Handler) PlayGameHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// TODO: Make safe using content policy.
+	var mdbuf bytes.Buffer
+	if err := goldmark.Convert([]byte(resp.GetState().GetNarration()), &mdbuf); err != nil {
+		http.Error(w, fmt.Sprintf("Cannot convert narration markdown: %v", err), http.StatusInternalServerError)
+		return
+	}
+
 	data := &playData{
-		GameId: gid,
-		State:  resp.GetState(),
-		Ended:  resp.GetState().GetRunState() == storypb.RunState_RS_COMPLETE,
+		GameId:    gid,
+		State:     resp.GetState(),
+		Narration: template.HTML(mdbuf.String()),
+		Ended:     resp.GetState().GetRunState() == storypb.RunState_RS_COMPLETE,
 	}
 	if err := h.playTmpl.Execute(w, data); err != nil {
 		log.Printf("Play template execution error: %v", err)
