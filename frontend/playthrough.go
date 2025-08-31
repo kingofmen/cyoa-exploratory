@@ -74,9 +74,10 @@ func (h *Handler) PlayGameHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// TODO: Make safe using content policy.
+	unsafe := []byte(resp.GetState().GetNarration())
+	safe := h.mdPolicy.SanitizeBytes(unsafe)
 	var mdbuf bytes.Buffer
-	if err := goldmark.Convert([]byte(resp.GetState().GetNarration()), &mdbuf); err != nil {
+	if err := goldmark.Convert(safe, &mdbuf); err != nil {
 		http.Error(w, fmt.Sprintf("Cannot convert narration markdown: %v", err), http.StatusInternalServerError)
 		return
 	}

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/microcosm-cc/bluemonday"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
@@ -68,6 +69,7 @@ type Handler struct {
 	editTmpl *template.Template
 	playTmpl *template.Template
 	client   spb.CyoaClient
+	mdPolicy *bluemonday.Policy
 }
 
 // NewHandler returns an initialized Handler object.
@@ -77,6 +79,7 @@ func NewHandler(cl spb.CyoaClient) *Handler {
 		editTmpl: template.Must(template.ParseFiles("frontend/story_editor_app/dist/story_editor.html")),
 		playTmpl: template.Must(template.ParseFiles("frontend/content/game.html")),
 		client:   cl,
+		mdPolicy: bluemonday.UGCPolicy(),
 	}
 }
 
