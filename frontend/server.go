@@ -91,6 +91,7 @@ func makeKey(ctx, key string) string {
 type gameDisplay struct {
 	Id    int64
 	Title string
+	State string
 }
 
 func makeIndexData() indexData {
@@ -128,6 +129,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		data.Games = append(data.Games, &gameDisplay{
 			Id:    gam.GetId(),
 			Title: storyTitles[gam.GetStoryId()],
+			State: gam.GetState().String(),
 		})
 	}
 

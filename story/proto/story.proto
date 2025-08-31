@@ -11,6 +11,7 @@ enum RunState {
   RS_ACTIVE = 1;
   RS_HIATUS = 2;
   RS_COMPLETE = 3;
+  RS_ARCHIVED = 4;
 }
 
 message Effect {

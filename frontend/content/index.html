@@ -32,9 +32,13 @@
     <h1>Games</h1>
       <ul>
       {{ range $gam := .Games }}
+        {{ $action := "Play" }}
+        {{ if eq $gam.State "RS_ARCHIVED" }}{{ continue }}{{end}}
+        {{ if eq $gam.State "RS_COMPLETE" }}{{ $action = "View" }}{{end}}
       <li>
 	  {{ $gam.Title }} : 
-	  <a href="{{$playURI}}?{{$gameIdKey}}={{$gam.Id}}">Play</a>
+	  <a href="{{$playURI}}?{{$gameIdKey}}={{$gam.Id}}">{{ $action }}</a>
+	  <a href="{{$playURI}}?{{$gameIdKey}}={{$gam.Id}}">Archive (unimplemented)</a>
       </li>
       {{ end }}
       </ul>

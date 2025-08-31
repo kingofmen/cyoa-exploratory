@@ -358,6 +358,7 @@ func listGamesImpl(ctx context.Context, db *sql.DB, req *spb.ListGamesRequest) (
 		resp.Games = append(resp.Games, &storypb.Playthrough{
 			Id:      proto.Int64(id),
 			StoryId: proto.Int64(gam.GetStoryId()),
+			State:   gam.GetState().Enum(),
 		})
 	}
 	if err := txn.Commit(); err != nil {
