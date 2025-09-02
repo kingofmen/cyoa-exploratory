@@ -30,6 +30,7 @@ const (
 	DeleteStoryURL         = "/api/story/delete"
 	CreateGameURL          = "/api/game/create"
 	PlayGameURL            = "/play"
+	ArchiveGameURL         = "/archive_game"
 
 	createCtx  = "create"
 	updateCtx  = "update"
@@ -52,6 +53,7 @@ type indexData struct {
 	PlayStoryURI       string
 	DeleteStoryURI     string
 	CreateStoryURI     string
+	ArchiveGameURI     string
 	StoryIdKey         string
 	GameIdKey          string
 
@@ -100,6 +102,7 @@ func makeIndexData() indexData {
 		PlayStoryURI:   PlayGameURL,
 		CreateStoryURI: CreateGameURL,
 		DeleteStoryURI: DeleteStoryURL,
+		ArchiveGameURI: ArchiveGameURL,
 		StoryIdKey:     storyIdKey,
 		GameIdKey:      gameIdKey,
 	}

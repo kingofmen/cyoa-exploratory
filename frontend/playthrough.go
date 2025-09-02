@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/yuin/goldmark"
 	"google.golang.org/protobuf/proto"
@@ -91,4 +92,20 @@ func (h *Handler) PlayGameHandler(w http.ResponseWriter, req *http.Request) {
 	if err := h.playTmpl.Execute(w, data); err != nil {
 		log.Printf("Play template execution error: %v", err)
 	}
+}
+
+// ArchiveGameHandler handles archiving a playthrough.
+func (h *Handler) ArchiveGameHandler(w http.ResponseWriter, req *http.Request) {
+	params := req.URL.Query()
+	if gameId := params.Get("game_id"); len(gameId) > 0 {
+		gid, err := strconv.ParseInt(gameId, 10, 64)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Cannot archive game with bad ID %q: %v", gameId, err), http.StatusBadRequest)
+			return
+		}
+		if gid > 0 {
+			log.Printf("Archiving game with ID %d", gid)
+		}
+	}
+	http.Redirect(w, req, "/", http.StatusSeeOther)
 }
