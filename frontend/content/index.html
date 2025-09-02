@@ -13,6 +13,7 @@
     {{- $ngamURI   := .CreateStoryURI -}}
     {{- $playURI   := .PlayStoryURI -}}
     {{- $deleteURI := .DeleteStoryURI -}}
+    {{- $archiveURI := .ArchiveGameURI -}}
     {{- $gameIdKey := .GameIdKey -}}
 
     <h1>Stories</h1>
@@ -38,7 +39,7 @@
       <li>
 	  {{ $gam.Title }} : 
 	  <a href="{{$playURI}}?{{$gameIdKey}}={{$gam.Id}}">{{ $action }}</a>
-	  <a href="{{$playURI}}?{{$gameIdKey}}={{$gam.Id}}">Archive (unimplemented)</a>
+	  <a href="{{$archiveURI}}?{{$gameIdKey}}={{$gam.Id}}">Archive</a>
       </li>
       {{ end }}
       </ul>
