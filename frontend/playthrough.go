@@ -104,7 +104,7 @@ func (h *Handler) ArchiveGameHandler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		if gid > 0 {
-			log.Printf("Archiving game with ID %d", gid)
+			log.Printf("Archiving game with ID %d (unimplemented)\n", gid)
 		}
 	}
 	http.Redirect(w, req, "/", http.StatusSeeOther)
